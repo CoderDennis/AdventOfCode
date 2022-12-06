@@ -1,36 +1,21 @@
 import AOC
-# import Structure
-
-alias Structure.Stack
 
 aoc 2022, 5 do
   def p1 do
-    input = input_path()
-    |> File.stream!()
-
-    stacks = input
-    |> get_stacks()
-
-    # stacks
-    input
-    |> Stream.drop_while(fn line -> line != "\n" end)
-    |> Stream.drop(1)
-    |> Enum.reduce(stacks, fn (line, acc) ->
-      line
-      |> String.trim()
-      |> String.split(" ")
-      |> perform_op1(acc)
-    end)
+    helper(&perform_op1/2)
   end
 
   def p2 do
+    helper(&perform_op2/2)
+  end
+
+  defp helper(fun) do
     input = input_path()
     |> File.stream!()
 
     stacks = input
     |> get_stacks()
 
-    # stacks
     input
     |> Stream.drop_while(fn line -> line != "\n" end)
     |> Stream.drop(1)
@@ -38,47 +23,33 @@ aoc 2022, 5 do
       line
       |> String.trim()
       |> String.split(" ")
-      |> perform_op2(acc)
+      |> fun.(acc)
     end)
+    |> Map.values()
+    |> Enum.map(&hd/1)
+    |> List.to_string()
   end
 
   defp perform_op2([_, move, _, from, _, to], stacks ) do
     count = String.to_integer(move)
-    # IO.inspect(count)
-    # get items
     {stacks, items} = Enum.reduce(1..count, {stacks, []}, fn _, {acc, items} ->
-      # IO.inspect(acc)
-      {:ok, item} = Stack.head(acc[from])
-      # IO.puts(item)
-      {:ok, new_from} = Stack.pop(acc[from])
+      [item | new_from] = acc[from]
       acc = Map.replace(acc, from, new_from)
-      # IO.inspect(acc)
-      # IO.puts(to)
-      # new_to = Stack.push(acc[to], item)
-      # Map.replace(acc, to, new_to)
       {acc, [item | items]}
     end)
 
     items
     |> Enum.reduce(stacks, fn item, acc ->
-      new_to = Stack.push(acc[to], item)
-      Map.replace(acc, to, new_to)
+      Map.replace(acc, to, [item | acc[to]])
     end)
   end
 
   defp perform_op1([_, move, _, from, _, to], stacks ) do
     count = String.to_integer(move)
-    # IO.inspect(count)
     Enum.reduce(1..count, stacks, fn _, acc ->
-      # IO.inspect(acc)
-      {:ok, item} = Stack.head(acc[from])
-      # IO.puts(item)
-      {:ok, new_from} = Stack.pop(acc[from])
+      [item | new_from] = acc[from]
       acc = Map.replace(acc, from, new_from)
-      # IO.inspect(acc)
-      # IO.puts(to)
-      new_to = Stack.push(acc[to], item)
-      Map.replace(acc, to, new_to)
+      Map.replace(acc, to, [item | acc[to]])
     end)
   end
 
@@ -93,7 +64,6 @@ aoc 2022, 5 do
         stack = items
         |> Enum.take_while(fn i -> i != " " end)
         |> Enum.reverse()
-        |> Stack.from_list()
         Map.put(acc, id, stack)
       else
         acc
