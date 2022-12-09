@@ -8,7 +8,7 @@ aoc 2022, 9 do
     |> MapSet.size()
   end
 
-  def p2 do # 2488 was too high
+  def p2 do
     1..9
     |> Enum.reduce(get_head_positions(), fn _, acc ->
       acc
@@ -16,10 +16,47 @@ aoc 2022, 9 do
     end)
     |> MapSet.new()
     |> MapSet.size()
-    # |> Enum.each(&IO.inspect/1)
   end
 
-  def get_head_positions() do
+  def visualize_part2 do
+    1..9
+    |> Enum.reduce([get_head_positions()], fn _, acc = [head | _] ->
+      [(head |> get_tail_positions()) | acc]
+    end)
+    |> Enum.reverse()
+    |> Enum.zip()
+    |> Enum.map(&Tuple.to_list/1)
+    |> Enum.map(&draw/1)
+    |> Enum.each(fn x ->
+      IO.puts(x)
+      IO.puts("\n")
+    end)
+  end
+
+  def draw(rope) do
+    positions = rope
+    |> Enum.with_index()
+    |> Enum.reverse()
+    |> Enum.reduce(%{}, fn {position, index}, map ->
+      map
+      |> Map.put(position, index)
+    end)
+    4..0
+    |> Enum.map(fn r ->
+      0..5
+      |> Enum.map(fn c ->
+        if Map.has_key?(positions, {r,c}) do
+          if positions[{r,c}] == 0, do: "H", else: positions[{r,c}]
+        else
+          "."
+        end
+      end)
+      |> Enum.join()
+    end)
+    |> Enum.join("\n")
+  end
+
+  def get_head_positions do
     start = {0,0}
 
     input_stream()
@@ -46,13 +83,19 @@ aoc 2022, 9 do
 
     head_positions
     |> Enum.reduce([start], fn {head_r, head_c}, path = [{tail_r, tail_c} | _] ->
-        [cond do
+        [(cond do
+          abs(head_r - tail_r) > 1 and abs(head_c - tail_c) > 1 ->
+            {
+              (if tail_r < head_r, do: tail_r + 1, else: tail_r - 1),
+              (if tail_c < head_c, do: tail_c + 1, else: tail_c - 1)
+            }
           abs(head_r - tail_r) > 1 -> if tail_r < head_r, do: {tail_r + 1, head_c}, else: {tail_r - 1, head_c}
           abs(head_c - tail_c) > 1 -> if tail_c < head_c, do: {head_r, tail_c + 1}, else: {head_r, tail_c - 1}
           true -> {tail_r, tail_c}
-        end | path]
+        end) | path]
     end)
     |> Enum.reverse()
+    |> Enum.drop(1)
   end
 
   def get_tail_positions() do
