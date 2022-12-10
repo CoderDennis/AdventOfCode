@@ -26,3 +26,5 @@ aoc-*.tar
 /tmp/
 
 /config/
+
+/.elixir_ls/
