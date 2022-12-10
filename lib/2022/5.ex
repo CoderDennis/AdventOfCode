@@ -10,16 +10,18 @@ aoc 2022, 5 do
   end
 
   defp helper(fun) do
-    input = input_path()
-    |> File.stream!()
+    input =
+      input_path()
+      |> File.stream!()
 
-    stacks = input
-    |> get_stacks()
+    stacks =
+      input
+      |> get_stacks()
 
     input
     |> Stream.drop_while(fn line -> line != "\n" end)
     |> Stream.drop(1)
-    |> Enum.reduce(stacks, fn (line, acc) ->
+    |> Enum.reduce(stacks, fn line, acc ->
       line
       |> String.trim()
       |> String.split(" ")
@@ -30,13 +32,15 @@ aoc 2022, 5 do
     |> List.to_string()
   end
 
-  defp perform_op2([_, move, _, from, _, to], stacks ) do
+  defp perform_op2([_, move, _, from, _, to], stacks) do
     count = String.to_integer(move)
-    {stacks, items} = Enum.reduce(1..count, {stacks, []}, fn _, {acc, items} ->
-      [item | new_from] = acc[from]
-      acc = Map.replace(acc, from, new_from)
-      {acc, [item | items]}
-    end)
+
+    {stacks, items} =
+      Enum.reduce(1..count, {stacks, []}, fn _, {acc, items} ->
+        [item | new_from] = acc[from]
+        acc = Map.replace(acc, from, new_from)
+        {acc, [item | items]}
+      end)
 
     items
     |> Enum.reduce(stacks, fn item, acc ->
@@ -44,8 +48,9 @@ aoc 2022, 5 do
     end)
   end
 
-  defp perform_op1([_, move, _, from, _, to], stacks ) do
+  defp perform_op1([_, move, _, from, _, to], stacks) do
     count = String.to_integer(move)
+
     Enum.reduce(1..count, stacks, fn _, acc ->
       [item | new_from] = acc[from]
       acc = Map.replace(acc, from, new_from)
@@ -59,11 +64,13 @@ aoc 2022, 5 do
     |> Enum.map(&String.codepoints/1)
     |> Enum.zip_with(& &1)
     |> Enum.map(&Enum.reverse/1)
-    |> Enum.reduce(%{}, fn ([id | items], acc) ->
+    |> Enum.reduce(%{}, fn [id | items], acc ->
       if id >= "1" and id <= "9" do
-        stack = items
-        |> Enum.take_while(fn i -> i != " " end)
-        |> Enum.reverse()
+        stack =
+          items
+          |> Enum.take_while(fn i -> i != " " end)
+          |> Enum.reverse()
+
         Map.put(acc, id, stack)
       else
         acc

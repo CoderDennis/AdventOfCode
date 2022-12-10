@@ -18,11 +18,9 @@ aoc 2022, 2 do
       {"A", "X"} -> 3
       {"B", "X"} -> 1
       {"C", "X"} -> 2
-
       {"A", "Y"} -> 4
       {"B", "Y"} -> 5
       {"C", "Y"} -> 6
-
       {"A", "Z"} -> 8
       {"B", "Z"} -> 9
       {"C", "Z"} -> 7
@@ -30,19 +28,22 @@ aoc 2022, 2 do
   end
 
   defp score1([them, " ", you]) do
-    game = case {them, you} do
-      {"A", "X"} -> 3
-      {"B", "Y"} -> 3
-      {"C", "Z"} -> 3
-      {"A", "Y"} -> 6
-      {"B", "Z"} -> 6
-      {"C", "X"} -> 6
-      _ -> 0
-    end
-    game + case you do
-      "X" -> 1
-      "Y" -> 2
-      "Z" -> 3
-    end
+    game =
+      case {them, you} do
+        {"A", "X"} -> 3
+        {"B", "Y"} -> 3
+        {"C", "Z"} -> 3
+        {"A", "Y"} -> 6
+        {"B", "Z"} -> 6
+        {"C", "X"} -> 6
+        _ -> 0
+      end
+
+    game +
+      case you do
+        "X" -> 1
+        "Y" -> 2
+        "Z" -> 3
+      end
   end
 end

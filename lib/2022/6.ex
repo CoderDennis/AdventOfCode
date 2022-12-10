@@ -13,10 +13,9 @@ aoc 2022, 6 do
 
   defp find_unique_chunk(str, size) do
     (str
-    |> String.codepoints()
-    |> Enum.chunk_every(size, 1, :discard)
-    |> Enum.take_while(fn list -> (MapSet.new(list) |> MapSet.size) != size end)
-    |> Enum.count()) + size
+     |> String.codepoints()
+     |> Enum.chunk_every(size, 1, :discard)
+     |> Enum.take_while(fn list -> MapSet.new(list) |> MapSet.size() != size end)
+     |> Enum.count()) + size
   end
-
 end

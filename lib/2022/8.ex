@@ -8,13 +8,14 @@ aoc 2022, 8 do
     cols = map_size(grid[0])
     edge_count = rows * 2 + cols * 2 - 4
 
-    interior_count = 1..rows - 2
-    |> Enum.reduce(0, (fn row, count ->
-      (1..cols - 2
-      |> Enum.reduce(0, fn col, col_count ->
-        col_count + tree_visible(grid, row, col)
-      end)) + count
-    end))
+    interior_count =
+      1..(rows - 2)
+      |> Enum.reduce(0, fn row, count ->
+        (1..(cols - 2)
+         |> Enum.reduce(0, fn col, col_count ->
+           col_count + tree_visible(grid, row, col)
+         end)) + count
+      end)
 
     interior_count + edge_count
   end
@@ -25,9 +26,9 @@ aoc 2022, 8 do
     rows = map_size(grid)
     cols = map_size(grid[0])
 
-    0..rows-1
+    0..(rows - 1)
     |> Enum.flat_map(fn row ->
-      0..cols-1
+      0..(cols - 1)
       |> Enum.map(fn col ->
         scenic_score(grid, row, col)
       end)
@@ -40,23 +41,31 @@ aoc 2022, 8 do
     rows = map_size(grid)
     cols = map_size(grid[0])
 
-    up = 0..row - 1
-    |> Enum.all?(fn r -> grid[r][col] < tree end)
+    up =
+      0..(row - 1)
+      |> Enum.all?(fn r -> grid[r][col] < tree end)
+
     if up do
       1
     else
-      down = row + 1 .. rows - 1
-      |> Enum.all?(fn r -> grid[r][col] < tree end)
+      down =
+        (row + 1)..(rows - 1)
+        |> Enum.all?(fn r -> grid[r][col] < tree end)
+
       if down do
         1
       else
-        left = 0..col - 1
-        |> Enum.all?(fn c -> grid[row][c] < tree end)
+        left =
+          0..(col - 1)
+          |> Enum.all?(fn c -> grid[row][c] < tree end)
+
         if left do
           1
         else
-          right = col + 1 .. cols - 1
-          |> Enum.all?(fn c -> grid[row][c] < tree end)
+          right =
+            (col + 1)..(cols - 1)
+            |> Enum.all?(fn c -> grid[row][c] < tree end)
+
           if right do
             1
           else
@@ -74,22 +83,37 @@ aoc 2022, 8 do
 
     # IO.inspect({tree, row, col})
 
-    up = if row == 0, do: 0, else: row - 1 .. 0
-    |> Enum.map(fn r -> grid[r][col] end)
-    |> Enum.reduce_while(0, fn t, acc -> reducer(t, tree, acc) end)
+    up =
+      if row == 0,
+        do: 0,
+        else:
+          (row - 1)..0
+          |> Enum.map(fn r -> grid[r][col] end)
+          |> Enum.reduce_while(0, fn t, acc -> reducer(t, tree, acc) end)
 
-    down = if row == rows - 1, do: 0, else: row + 1 .. rows - 1
-    |> Enum.map(fn r -> grid[r][col] end)
-    |> Enum.reduce_while(0, fn t, acc -> reducer(t, tree, acc) end)
+    down =
+      if row == rows - 1,
+        do: 0,
+        else:
+          (row + 1)..(rows - 1)
+          |> Enum.map(fn r -> grid[r][col] end)
+          |> Enum.reduce_while(0, fn t, acc -> reducer(t, tree, acc) end)
 
-    left = if col == 0, do: 0, else: col - 1 .. 0
-    |> Enum.map(fn c -> grid[row][c] end)
-    |> Enum.reduce_while(0, fn t, acc -> reducer(t, tree, acc) end)
+    left =
+      if col == 0,
+        do: 0,
+        else:
+          (col - 1)..0
+          |> Enum.map(fn c -> grid[row][c] end)
+          |> Enum.reduce_while(0, fn t, acc -> reducer(t, tree, acc) end)
 
-    right = if col == cols - 1, do: 0, else: col + 1 .. cols - 1
-    |> Enum.map(fn c -> grid[row][c] end)
-    |> Enum.reduce_while(0, fn t, acc -> reducer(t, tree, acc) end)
-
+    right =
+      if col == cols - 1,
+        do: 0,
+        else:
+          (col + 1)..(cols - 1)
+          |> Enum.map(fn c -> grid[row][c] end)
+          |> Enum.reduce_while(0, fn t, acc -> reducer(t, tree, acc) end)
 
     answer = up * down * left * right
 
@@ -115,7 +139,9 @@ aoc 2022, 8 do
     |> Stream.map(&String.codepoints/1)
     |> Stream.with_index()
     |> Enum.reduce(%{}, fn {line, row}, map ->
-      Map.put(map, row,
+      Map.put(
+        map,
+        row,
         line
         |> Enum.with_index()
         |> Enum.reduce(%{}, fn {tree, col}, row_map ->
@@ -124,5 +150,4 @@ aoc 2022, 8 do
       )
     end)
   end
-
 end

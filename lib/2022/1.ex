@@ -3,11 +3,11 @@ import AOC
 aoc 2022, 1 do
   def p1 do
     input_stream(2022, 1)
-    |> Enum.reduce({0, 0}, fn (line, {ans, current}) ->
+    |> Enum.reduce({0, 0}, fn line, {ans, current} ->
       if line == "" do
         {max(ans, current), 0}
       else
-        {ans, current + String.to_integer(line) }
+        {ans, current + String.to_integer(line)}
       end
     end)
     |> elem(0)
@@ -15,7 +15,7 @@ aoc 2022, 1 do
 
   def p2 do
     input_stream(2022, 1)
-    |> Enum.reduce([0], fn (line, totals) ->
+    |> Enum.reduce([0], fn line, totals ->
       if line == "" do
         [0 | totals]
       else

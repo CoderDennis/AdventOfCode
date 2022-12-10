@@ -8,16 +8,20 @@ aoc 2022, 4 do
   end
 
   defp is_fully_contained(pair) do
-    [[e1_1, e1_2], [e2_1, e2_2]] = pair
-    |> String.split(",")
-    |> Enum.map(&numbers/1)
+    [[e1_1, e1_2], [e2_1, e2_2]] =
+      pair
+      |> String.split(",")
+      |> Enum.map(&numbers/1)
+
     (e1_1 <= e2_1 and e1_2 >= e2_2) or (e2_1 <= e1_1 and e2_2 >= e1_2)
   end
 
   defp is_contained(pair) do
-    [[e1_1, e1_2], [e2_1, e2_2]] = pair
-    |> String.split(",")
-    |> Enum.map(&numbers/1)
+    [[e1_1, e1_2], [e2_1, e2_2]] =
+      pair
+      |> String.split(",")
+      |> Enum.map(&numbers/1)
+
     (e1_1 <= e2_2 and e1_2 >= e2_1) or (e2_1 <= e1_2 and e2_2 >= e1_1)
   end
 

@@ -10,9 +10,11 @@ aoc 2022, 3 do
 
   defp find_item(line) do
     size = String.length(line) |> div(2)
-    item_set = String.codepoints(line)
-    |> Enum.take(size)
-    |> MapSet.new()
+
+    item_set =
+      String.codepoints(line)
+      |> Enum.take(size)
+      |> MapSet.new()
 
     String.codepoints(line)
     |> Enum.drop(size)
