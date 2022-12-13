@@ -8,13 +8,9 @@ aoc 2022, 13 do
     |> Enum.map(&Code.eval_string/1)
     |> Enum.map(fn x -> elem(x, 0) end)
     |> Enum.chunk_every(2)
-    |> Enum.with_index()
+    |> Enum.with_index(1)
     |> Enum.map(fn {[left, right], index} ->
-      if compare(left, right) == :gt do
-        0
-      else
-        index + 1
-      end
+      if compare(left, right) == :gt, do: 0, else: index
     end)
     |> Enum.sum()
   end
@@ -59,10 +55,10 @@ aoc 2022, 13 do
     |> Enum.map(fn x -> elem(x, 0) end)
     |> Enum.concat([[[2]], [[6]]])
     |> Enum.sort(__MODULE__)
-    |> Enum.with_index()
+    |> Enum.with_index(1)
     |> Enum.reduce(1, fn {packet, index}, acc ->
       if packet == [[2]] or packet == [[6]] do
-        acc * (index + 1)
+        acc * index
       else
         acc
       end
