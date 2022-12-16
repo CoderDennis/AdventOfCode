@@ -2,26 +2,80 @@ import AOC
 
 aoc 2022, 15 do
   def p1 do
-    {filled, beacons} =
-      example_stream()
+    sensors =
+      input_stream()
       |> parse_input()
-      |> Enum.reduce({MapSet.new(), MapSet.new()}, &fill_sensor_area/2)
 
-    # 2_000_000
-    check_y = 10
+    {{min_x, max_x}, beacons} =
+      sensors
+      |> Enum.reduce({{0, 0}, MapSet.new()}, &find_x_extent_and_beacons/2)
 
-    filled
-    |> Enum.reduce(0, fn
-      {_x, ^check_y} = position, count ->
-        IO.inspect(position)
-        if MapSet.member?(beacons, position), do: count, else: count + 1
+    # check_y = 10
+    check_y = 2_000_000
 
-      _, count ->
+    # filled
+    # |> Enum.reduce(0, fn
+    #   {_x, ^check_y} = position, count ->
+    #     IO.inspect(position)
+    #     if MapSet.member?(beacons, position), do: count, else: count + 1
+
+    #   _, count ->
+    #     count
+    # end)
+    min_x..max_x
+    |> Enum.reduce(0, fn x, count ->
+      if Enum.find(sensors, fn {x1, y1, _, _} = sensor ->
+           distance(sensor) >= distance({x1, y1, x, check_y})
+         end) != nil do
+        if MapSet.member?(beacons, {x, check_y}), do: count, else: count + 1
+      else
         count
+      end
     end)
   end
 
   def p2 do
+    sensors =
+      input_stream()
+      |> parse_input()
+
+    sensors_with_distance =
+      sensors
+      |> Enum.map(fn {x, y, _, _} = sensor ->
+        {x, y, distance(sensor)}
+      end)
+
+    # max_coord = 20
+    max_coord = 4_000_000
+
+    # {x, y} =
+    #   for(
+    #     x <- 0..max_coord,
+    #     y <- 0..max_coord,
+    #     do: {x, y}
+    #   )
+    #   |> Enum.find(fn {x, y} ->
+    #     sensors_with_distance
+    #     |> Enum.find(fn {x1, y1, distance} ->
+    #       distance({x1, y1, x, y}) <= distance
+    #     end) == nil
+    #   end)
+    0..max_coord
+    |> Task.async_stream(
+      fn x ->
+        0..max_coord
+        |> Enum.each(fn y ->
+          if sensors_with_distance
+             |> Enum.find(fn {x1, y1, distance} ->
+               distance({x1, y1, x, y}) <= distance
+             end) == nil do
+            IO.inspect({x, y, x * 4_000_000 + y})
+          end
+        end)
+      end,
+      timeout: :infinity
+    )
+    |> Stream.run()
   end
 
   def parse_input(stream) do
@@ -34,19 +88,10 @@ aoc 2022, 15 do
     end)
   end
 
-  def fill_sensor_area({x1, y1, x2, y2} = sensor, {filled, beacons}) do
-    # filled and beacons should be MapSet instances
+  def find_x_extent_and_beacons({x1, _y1, x2, y2} = sensor, {{min_x, max_x}, beacons}) do
     distance = IO.inspect(distance(sensor))
 
-    {-distance..distance
-     |> Enum.reduce(filled, fn x, filled ->
-       y = distance - abs(x)
-
-       -y..y
-       |> Enum.reduce(filled, fn y, filled ->
-         MapSet.put(filled, {x + x1, y + y1})
-       end)
-     end), MapSet.put(beacons, {x2, y2})}
+    {{min(x1 - distance, min_x), max(x1 + distance, max_x)}, MapSet.put(beacons, {x2, y2})}
   end
 
   def distance({x1, y1, x2, y2}), do: abs(x1 - x2) + abs(y1 - y2)
