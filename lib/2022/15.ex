@@ -36,7 +36,7 @@ aoc 2022, 15 do
 
   def p2 do
     sensors =
-      input_stream()
+      example_stream()
       |> parse_input()
 
     sensors_with_distance =
@@ -45,8 +45,8 @@ aoc 2022, 15 do
         {x, y, distance(sensor)}
       end)
 
-    # max_coord = 20
-    max_coord = 4_000_000
+    max_coord = 20
+    # max_coord = 4_000_000
 
     # {x, y} =
     #   for(
@@ -60,16 +60,19 @@ aoc 2022, 15 do
     #       distance({x1, y1, x, y}) <= distance
     #     end) == nil
     #   end)
-    0..max_coord
+    sensors_with_distance
     |> Task.async_stream(
-      fn x ->
-        0..max_coord
-        |> Enum.each(fn y ->
-          if sensors_with_distance
-             |> Enum.find(fn {x1, y1, distance} ->
-               distance({x1, y1, x, y}) <= distance
-             end) == nil do
-            IO.inspect({x, y, x * 4_000_000 + y})
+      fn sensor ->
+        sensor
+        |> outer_perimeter_for_sensor()
+        |> Enum.each(fn {x, y} ->
+          if x >= 0 and x <= max_coord and y >= 0 and y <= max_coord do
+            if sensors_with_distance
+               |> Enum.find(fn {x1, y1, distance} ->
+                 distance({x1, y1, x, y}) <= distance
+               end) == nil do
+              IO.inspect({x, y, x * 4_000_000 + y})
+            end
           end
         end)
       end,
@@ -95,4 +98,35 @@ aoc 2022, 15 do
   end
 
   def distance({x1, y1, x2, y2}), do: abs(x1 - x2) + abs(y1 - y2)
+
+  def outer_perimeter_for_sensor({x1, y1, distance}) do
+    0..(distance + 1)
+    |> Enum.reduce([], fn x, list ->
+      y = distance - x
+
+      [
+        {x1 + x, y1 + y},
+        {x1 - x, y1 + y},
+        {x1 + x, y1 - y},
+        {x1 - x, y1 - y}
+        | list
+      ]
+    end)
+    |> MapSet.new()
+  end
+
+  # def fill_sensor_area({x1, y1, x2, y2} = sensor, {filled, beacons}) do
+  #   # filled and beacons should be MapSet instances
+  #   distance = IO.inspect(distance(sensor))
+
+  #   {-distance..distance
+  #    |> Enum.reduce(filled, fn x, filled ->
+  #      y = distance - abs(x)
+
+  #      -y..y
+  #      |> Enum.reduce(filled, fn y, filled ->
+  #        MapSet.put(filled, {x + x1, y + y1})
+  #      end)
+  #    end), MapSet.put(beacons, {x2, y2})}
+  # end
 end
