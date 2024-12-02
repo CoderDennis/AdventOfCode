@@ -28,3 +28,5 @@ aoc-*.tar
 /config/
 
 /.elixir_ls/
+
+/input/
