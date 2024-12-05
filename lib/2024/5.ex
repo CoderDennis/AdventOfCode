@@ -11,10 +11,8 @@ aoc 2024, 5 do
       rules
       |> Enum.reduce(%{}, fn rule, map ->
         [pre, post] = String.split(rule, "|")
-        Map.update(map, pre, [post], fn list -> [post | list] end)
+        Map.update(map, pre, MapSet.new([post]), fn set -> MapSet.put(set, post) end)
       end)
-
-    # IO.inspect(Enum.count(updates))
 
     # rule_map
     updates
@@ -25,7 +23,6 @@ aoc 2024, 5 do
     end)
     |> Enum.filter(fn update ->
       update
-      |> Enum.chunk_every(2, 1, :discard)
       |> valid_update(rule_map)
     end)
     |> Enum.map(fn update ->
@@ -43,27 +40,55 @@ aoc 2024, 5 do
 
   defp valid_update([], _), do: true
 
-  defp valid_update([[pre, post] | rest], rule_map) do
-    if not search_pair(pre, post, rule_map) do
+  defp valid_update([page | rest], rule_map) do
+    if Enum.any?(rest, fn following_page ->
+         MapSet.member?(Map.get(rule_map, following_page, MapSet.new()), page)
+       end) do
       false
     else
       valid_update(rest, rule_map)
     end
   end
 
-  defp search_pair(pre, post, rule_map) do
-    if not Map.has_key?(rule_map, pre) do
-      false
-    else
-      if Enum.member?(Map.get(rule_map, pre), post) do
-        true
-      else
-        Map.get(rule_map, pre)
-        |> Enum.any?(&search_pair(&1, post, rule_map))
-      end
-    end
+  def p2(input) do
+    {rules, updates} =
+      input
+      |> String.split("\n")
+      |> Enum.split_while(fn x -> x != "" end)
+
+    rule_map =
+      rules
+      |> Enum.reduce(%{}, fn rule, map ->
+        [pre, post] = String.split(rule, "|")
+        Map.update(map, pre, MapSet.new([post]), fn set -> MapSet.put(set, post) end)
+      end)
+
+    # rule_map
+    updates
+    |> Enum.filter(fn x -> x != "" end)
+    |> Enum.map(fn update ->
+      update
+      |> String.split(",")
+    end)
+    |> Enum.reject(fn update ->
+      update
+      |> valid_update(rule_map)
+    end)
+    |> Enum.map(&sort_update(&1, rule_map))
+    |> Enum.map(fn update ->
+      mid =
+        update
+        |> Enum.count()
+        |> div(2)
+
+      update
+      |> Enum.at(mid)
+      |> String.to_integer()
+    end)
+    |> Enum.sum()
   end
 
-  def p2(_input) do
+  defp sort_update(update, rule_map) do
+    Enum.sort(update, fn a, b -> MapSet.member?(Map.get(rule_map, a, MapSet.new()), b) end)
   end
 end
