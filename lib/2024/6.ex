@@ -74,7 +74,7 @@ aoc 2024, 6 do
       # IO.inspect({position, direction}, label: "loop found")
       1
     else
-      # path = MapSet.put(path, {position, direction})
+      path = MapSet.put(path, {position, direction})
       next_position = {r + dr, c + dc}
 
       if not Map.has_key?(map, next_position) do
@@ -82,12 +82,8 @@ aoc 2024, 6 do
         0
       else
         if Map.get(map, next_position) == "#" do
-          {dr, dc} = direction = turn_right(direction)
-          path = MapSet.put(path, {position, direction})
-          next_position = {r + dr, c + dc}
-          guard_path_contains_loop(next_position, direction, map, path)
+          guard_path_contains_loop(position, turn_right(direction), map, path)
         else
-          path = MapSet.put(path, {position, direction})
           guard_path_contains_loop(next_position, direction, map, path)
         end
       end
