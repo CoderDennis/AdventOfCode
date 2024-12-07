@@ -25,6 +25,8 @@ aoc 2024, 7 do
 
   defp eval_equation(_test_value, _other_total, [], _), do: 0
 
+  defp eval_equation(test_value, total, _, _) when total > test_value, do: 0
+
   defp eval_equation(test_value, total, [value | rest], ops) do
     if ops
        |> Enum.map(fn op ->
