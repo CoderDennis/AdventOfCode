@@ -6,8 +6,6 @@ aoc 2024, 7 do
     |> String.split("\n")
     |> Enum.map(fn eq -> eval_equation(eq, [&(&1 + &2), &(&1 * &2)]) end)
     |> Enum.sum()
-
-    # {test_value, numbers}
   end
 
   defp eval_equation(equation, ops) do
