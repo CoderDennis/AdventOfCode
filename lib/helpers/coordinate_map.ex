@@ -1,8 +1,10 @@
 defmodule Helpers.CoordinateMap do
   @doc """
   takes the input and creates a map indexed by {row, col} coordinates
+
+  `map` is a function to call on each character of the input and defaults to identity
   """
-  def create(input) do
+  def create(input, map \\ fn x -> x end) do
     input
     |> String.split("\n")
     |> Enum.with_index()
@@ -11,7 +13,7 @@ defmodule Helpers.CoordinateMap do
       |> String.codepoints()
       |> Enum.with_index()
       |> Enum.map(fn {char, c} ->
-        {{r, c}, char}
+        {{r, c}, map.(char)}
       end)
     end)
     |> Map.new()
