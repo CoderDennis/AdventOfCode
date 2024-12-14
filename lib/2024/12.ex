@@ -10,24 +10,16 @@ aoc 2024, 12 do
 
     {regions, _visited} =
       map
-      |> Enum.reduce({[], MapSet.new()}, fn {plot, plant_type}, {regions, visited} ->
-        # visited set of plots, use DFS to see what all is connected for a given region
-        IO.inspect(visited)
-
-        case MapSet.member?(visited, plot) do
-          true ->
-            {regions, visited}
-
-          false ->
-            {region, visited} = explore_region(plot, plant_type, map, visited)
-            {[region | regions], visited}
+      |> Enum.reduce({[], MapSet.new()}, fn {plot, plant_type}, {regions, visited_plots} ->
+        if MapSet.member?(visited_plots, plot) do
+          {regions, visited_plots}
+        else
+          {region, visited} = fill_region(plot, plant_type, [], map, visited_plots)
+          {[{plant_type, MapSet.new(region)} | regions], visited}
         end
-
-        {regions, visited}
       end)
 
     regions
-    |> IO.inspect()
     |> Enum.map(fn {_plant_type, plots} = region ->
       area = Enum.count(plots)
       perimeter = perimeter(region, map)
@@ -39,27 +31,18 @@ aoc 2024, 12 do
 
   @directions [{-1, 0}, {1, 0}, {0, -1}, {0, 1}]
 
-  def explore_region({r, c} = plot, plant_type, map, visited) do
-    # IO.inspect({plot, plant_type, visited})
+  def fill_region({r, c} = plot, plant_type, region, map, visited) do
+    visited = MapSet.put(visited, plot)
+    region = [plot | region]
 
-    plots_to_explore =
-      @directions
-      |> Enum.map(fn {dr, dc} -> {r + dr, c + dc} end)
-      |> Enum.filter(fn other_plot ->
-        Map.get(map, other_plot) == plant_type and not MapSet.member?(visited, other_plot)
-      end)
-      |> IO.inspect()
-
-    visited = MapSet.put(visited, plot) |> IO.inspect()
-
-    {region_plots, visited} =
-      plots_to_explore
-      |> Enum.reduce({MapSet.new([plot]), visited}, fn other_plot, {plots, visited} ->
-        {{_, region_plots}, visited} = explore_region(other_plot, plant_type, map, visited)
-        {MapSet.union(plots, region_plots), visited}
-      end)
-
-    {{plant_type, region_plots}, visited}
+    @directions
+    |> Enum.map(fn {dr, dc} -> {r + dr, c + dc} end)
+    |> Enum.filter(fn next_plot ->
+      Map.get(map, next_plot) == plant_type and not MapSet.member?(visited, next_plot)
+    end)
+    |> Enum.reduce({region, visited}, fn next_plot, {region, visited} ->
+      fill_region(next_plot, plant_type, region, map, visited)
+    end)
   end
 
   def perimeter({plant_type, plots}, map) do
