@@ -85,60 +85,53 @@ aoc 2024, 12 do
 
   def count_sides({plant_type, plots}, map) do
     # visited needs to include direction and the top/left edge of the side because corner plots are part of 2 sides
-    {sides, _visited} =
-      plots
-      |> Enum.reduce({0, MapSet.new()}, fn {r, c} = plot, {sides, visited} ->
-        @directions
-        |> Enum.reduce({sides, visited}, fn {dr, dc} = direction, {sides, visited} ->
-          other_plot = {r + dr, c + dc}
+    plots
+    |> Enum.reduce(MapSet.new(), fn {r, c} = plot, visited ->
+      @directions
+      |> Enum.reduce(visited, fn {dr, dc} = direction, visited ->
+        other_plot = {r + dr, c + dc}
 
-          if Map.get(map, other_plot) != plant_type do
-            # on a side
-            if MapSet.member?(visited, {plot, direction}) do
-              # already counted this side
-              {sides, visited}
-            else
-              # find top/left edge of current side in given direction.
-              {move_r, move_c} =
-                case direction do
-                  {0, _dc} ->
-                    # move up to find top
-                    {-1, 0}
-
-                  {_dr, 0} ->
-                    # move left to find left
-                    {0, -1}
-                end
-
-              top_left =
-                plot
-                |> Stream.unfold(fn {r, c} = side_plot ->
-                  other_side_plot = {r + dr, c + dc}
-
-                  if Map.get(map, side_plot) == plant_type and
-                       Map.get(map, other_side_plot) != plant_type do
-                    {side_plot, {r + move_r, c + move_c}}
-                  else
-                    nil
-                  end
-                end)
-                |> Enum.reverse()
-                |> Enum.at(0)
-
-              # add to sides if not visited
-              if MapSet.member?(visited, {top_left, direction}) do
-                {sides, visited}
-              else
-                {sides + 1, MapSet.put(visited, {top_left, direction})}
-              end
-            end
+        if Map.get(map, other_plot) != plant_type do
+          # on a side
+          if MapSet.member?(visited, {plot, direction}) do
+            # already counted this side
+            visited
           else
-            # not on a side
-            {sides, visited}
-          end
-        end)
-      end)
+            # find top/left edge of current side in given direction.
+            {move_r, move_c} =
+              case direction do
+                {0, _dc} ->
+                  # move up to find top
+                  {-1, 0}
 
-    sides
+                {_dr, 0} ->
+                  # move left to find left
+                  {0, -1}
+              end
+
+            top_left =
+              plot
+              |> Stream.unfold(fn {r, c} = side_plot ->
+                other_side_plot = {r + dr, c + dc}
+
+                if Map.get(map, side_plot) == plant_type and
+                     Map.get(map, other_side_plot) != plant_type do
+                  {side_plot, {r + move_r, c + move_c}}
+                else
+                  nil
+                end
+              end)
+              |> Enum.at(-1)
+
+            # add side to visited set
+            MapSet.put(visited, {top_left, direction})
+          end
+        else
+          # not on a side
+          visited
+        end
+      end)
+    end)
+    |> MapSet.size()
   end
 end
