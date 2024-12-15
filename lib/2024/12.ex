@@ -57,6 +57,88 @@ aoc 2024, 12 do
     |> Enum.count()
   end
 
-  def p2(_input) do
+  def p2(input) do
+    map =
+      input
+      |> CoordinateMap.create()
+
+    {regions, _visited} =
+      map
+      |> Enum.reduce({[], MapSet.new()}, fn {plot, plant_type}, {regions, visited_plots} ->
+        if MapSet.member?(visited_plots, plot) do
+          {regions, visited_plots}
+        else
+          {region, visited} = fill_region(plot, plant_type, [], map, visited_plots)
+          {[{plant_type, MapSet.new(region)} | regions], visited}
+        end
+      end)
+
+    regions
+    |> Enum.map(fn {_plant_type, plots} = region ->
+      area = Enum.count(plots)
+      sides = count_sides(region, map)
+      # IO.inspect({plant_type, area, sides})
+      area * sides
+    end)
+    |> Enum.sum()
+  end
+
+  def count_sides({plant_type, plots}, map) do
+    # visited needs to include direction and the top/left edge of the side because corner plots are part of 2 sides
+    {sides, _visited} =
+      plots
+      |> Enum.reduce({0, MapSet.new()}, fn {r, c} = plot, {sides, visited} ->
+        @directions
+        |> Enum.reduce({sides, visited}, fn {dr, dc} = direction, {sides, visited} ->
+          other_plot = {r + dr, c + dc}
+
+          if Map.get(map, other_plot) != plant_type do
+            # on a side
+            if MapSet.member?(visited, {plot, direction}) do
+              # already counted this side
+              {sides, visited}
+            else
+              # find top/left edge of current side in given direction.
+              {move_r, move_c} =
+                case direction do
+                  {0, _dc} ->
+                    # move up to find top
+                    {-1, 0}
+
+                  {_dr, 0} ->
+                    # move left to find left
+                    {0, -1}
+                end
+
+              top_left =
+                plot
+                |> Stream.unfold(fn {r, c} = side_plot ->
+                  other_side_plot = {r + dr, c + dc}
+
+                  if Map.get(map, side_plot) == plant_type and
+                       Map.get(map, other_side_plot) != plant_type do
+                    {side_plot, {r + move_r, c + move_c}}
+                  else
+                    nil
+                  end
+                end)
+                |> Enum.reverse()
+                |> Enum.at(0)
+
+              # add to sides if not visited
+              if MapSet.member?(visited, {top_left, direction}) do
+                {sides, visited}
+              else
+                {sides + 1, MapSet.put(visited, {top_left, direction})}
+              end
+            end
+          else
+            # not on a side
+            {sides, visited}
+          end
+        end)
+      end)
+
+    sides
   end
 end
