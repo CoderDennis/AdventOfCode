@@ -17,32 +17,46 @@ aoc 2024, 16 do
 
     # CoordinateMap.draw(map)
 
-    {score, _} = find_lowest_score(start_position, {0, 1}, map, 0, MapSet.new())
-    score
+    find_lowest_score(map, start_position)
   end
 
-  def find_lowest_score({x, y} = position, direction, map, score, visited) do
-    # IO.inspect({position, direction})
-    # IO.inspect(visited)
+  def find_lowest_score(map, start_position) do
+    q = :queue.new()
 
-    if Map.get(map, position) == "E" do
-      {score, visited}
-    else
-      visited = MapSet.put(visited, position)
+    visited = Map.new()
+    visited = Map.put(visited, {start_position, {0, 1}}, 0)
 
-      next_directions(direction)
-      |> Enum.map(fn {{dx, dy} = next_direction, cost} ->
-        next_position = {x + dx, y + dy}
+    q = :queue.in({start_position, {0, 1}, 0}, q)
 
-        if Map.get(map, next_position) != "#" and
-             not MapSet.member?(visited, next_position) do
-          find_lowest_score(next_position, next_direction, map, score + cost + 1, visited)
-        else
-          {:infinity, visited}
-        end
-      end)
-      |> Enum.min_by(&elem(&1, 0))
-    end
+    Stream.unfold({q, visited}, fn {q, visited} ->
+      case :queue.out(q) do
+        {:empty, _q} ->
+          nil
+
+        {{:value, {{x, y} = position, direction, cost_so_far}}, q} ->
+          if Map.get(map, position) == "E" do
+            {cost_so_far, {q, visited}}
+          else
+            {new_q, new_visited} =
+              next_directions(direction)
+              |> Enum.reduce({q, visited}, fn {{dx, dy} = next_direction, cost}, {q, visited} ->
+                next_position = {x + dx, y + dy}
+                cost = cost_so_far + cost + 1
+
+                if Map.get(map, next_position) != "#" and
+                     Map.get(visited, {next_position, next_direction}, :infinity) > cost do
+                  {:queue.in({next_position, next_direction, cost}, q),
+                   Map.put(visited, {next_position, next_direction}, cost)}
+                else
+                  {q, visited}
+                end
+              end)
+
+            {nil, {new_q, new_visited}}
+          end
+      end
+    end)
+    |> Enum.min()
   end
 
   def next_directions({-1, 0} = d), do: [{d, 0}, {{0, -1}, 1000}, {{0, 1}, 1000}]
