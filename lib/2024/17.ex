@@ -105,50 +105,25 @@ aoc 2024, 17 do
       |> Map.values()
       |> Enum.join(",")
 
-    # Stream.iterate(1, &(&1 * 10))
-    # |> Stream.drop_while(fn a ->
-    #   output = run(program, 0, %{a: a, b: b, c: c}, [])
-    #   IO.inspect({String.length(output), a, output})
-    #   # find order of magnitude of output with correct length
-    #   String.length(output) <= String.length(program_text)
-    # end)
-    # |> Enum.at(0)
+    start_value =
+      Stream.iterate(1, &(&1 * 10))
+      |> Stream.drop_while(fn a ->
+        output = run(program, 0, %{a: a, b: b, c: c}, [])
+        # IO.inspect({String.length(output), a, output})
+        # find order of magnitude of output with correct length
+        String.length(output) < String.length(program_text)
+      end)
+      |> Enum.at(0)
+      |> then(&div(&1, 10))
 
-    # recompile the following bounds checks with exponentially smaller steps
-
-    # Stream.iterate(35_184_372_100_000, &(&1 - 1))
-    # |> Stream.drop_while(fn a ->
-    #   output = run(program, 0, %{a: a, b: b, c: c}, [])
-    #   IO.inspect({String.length(output), a, output})
-    #   # find lower bound of correct length
-    #   String.length(output) == String.length(program_text)
-    # end)
-    # |> Enum.at(0)
-
-    # Stream.iterate(281_474_976_711_000, &(&1 - 1))
-    # |> Stream.drop_while(fn a ->
-    #   output = run(program, 0, %{a: a, b: b, c: c}, [])
-    #   IO.inspect({String.length(output), a, output})
-    #   # find upper bound of correct length
-    #   String.length(output) > String.length(program_text)
-    # end)
-    # |> Enum.at(0)
-
-    # Stream.iterate(35_184_372_100_000, &(&1 + 1))
-    # |> Stream.drop_while(fn a ->
-    #   output = run(program, 0, %{a: a, b: b, c: c}, [])
-    #   IO.inspect({String.length(output), a, output})
-    #   output != program_text
-    # end)
-    # |> Enum.at(0)
-
-    Stream.unfold(35_184_372_100_000, fn a ->
+    Stream.unfold(start_value, fn a ->
       output = run(program, 0, %{a: a, b: b, c: c}, [])
       match_score = match_score(output, program_text)
-      IO.inspect({String.length(output), a, output, match_score})
+      # IO.inspect({String.length(output), a, output, match_score})
 
       case match_score do
         31 ->
+          IO.puts(a)
           nil
 
         score when score > 18 ->
@@ -165,8 +140,6 @@ aoc 2024, 17 do
       end
     end)
     |> Stream.run()
-
-    #
   end
 
   for char_len <- 31..1//-1 do
