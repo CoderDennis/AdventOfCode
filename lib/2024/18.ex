@@ -10,7 +10,6 @@ aoc 2024, 18 do
     |> parse_input()
     |> Enum.take(byte_count)
     |> find_exit(space_dimension)
-    |> Enum.at(-1)
   end
 
   @directions [{-1, 0}, {1, 0}, {0, -1}, {0, 1}]
@@ -54,6 +53,7 @@ aoc 2024, 18 do
           {nil, {new_q, new_visited}}
       end
     end)
+    |> Enum.at(-1)
   end
 
   def parse_input(input) do
@@ -78,7 +78,7 @@ aoc 2024, 18 do
       # IO.inspect(byte)
       bytes = [byte | bytes]
 
-      case find_exit(bytes, space_dimension) |> Enum.at(-1) do
+      case find_exit(bytes, space_dimension) do
         nil ->
           {:halt, bytes}
 
