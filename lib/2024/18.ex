@@ -87,9 +87,5 @@ aoc 2024, 18 do
       end
     end)
     |> Enum.at(0)
-
-    # |> Enum.at(-1)
-    # |> Enum.take(byte_count)
-    # |> find_exit(space_dimension)
   end
 end
