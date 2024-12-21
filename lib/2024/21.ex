@@ -34,7 +34,7 @@ aoc 2024, 21 do
       length =
         path_to_code(numeric_keypad, code)
         |> elem(1)
-        |> IO.inspect()
+        # |> IO.inspect()
         |> Enum.flat_map(fn code ->
           path_to_code(directional_keypad, code)
           |> elem(1)
@@ -64,25 +64,10 @@ aoc 2024, 21 do
 
     code
     |> Enum.reduce({a_position, [[]]}, fn button, {start_position, paths} ->
-      button_paths = paths_to_button(keypad, start_position, button)
-      {next_position, _} = Enum.at(button_paths, 0)
-
-      paths_with_lenghts =
-        button_paths
-        |> Enum.map(&elem(&1, 1))
-        |> Enum.map(fn path ->
-          {path, Enum.count(path)}
-        end)
-
-      shortest_path_length =
-        paths_with_lenghts
-        |> Enum.map(&elem(&1, 1))
-        |> Enum.min()
+      {next_position, button_paths} = shortest_paths_to_button(keypad, start_position, button)
 
       shortest_paths =
-        paths_with_lenghts
-        |> Enum.filter(fn {_, len} -> len == shortest_path_length end)
-        |> Enum.map(&elem(&1, 0))
+        button_paths
         |> Enum.flat_map(fn button_path ->
           paths
           |> Enum.map(fn path ->
@@ -96,43 +81,79 @@ aoc 2024, 21 do
 
   @directions [{{-1, 0}, "^"}, {{1, 0}, "v"}, {{0, -1}, "<"}, {{0, 1}, ">"}]
 
-  defmemo paths_to_button(keypad, start_position, button) do
+  defmemo shortest_paths_to_button(keypad, start_position, button) do
     q = :queue.new()
 
     # visited = MapSet.new([start_position])
 
     q = :queue.in({start_position, [], MapSet.new([start_position])}, q)
 
-    Stream.unfold(q, fn q ->
-      case :queue.out(q) do
-        {:empty, _q} ->
-          nil
+    button_paths =
+      Stream.unfold(q, fn q ->
+        case :queue.out(q) do
+          {:empty, _q} ->
+            nil
 
-        {{:value, {{x, y} = position, path, visited}}, q} ->
-          if Map.get(keypad, position) == button do
-            {{position, Enum.reverse(["A" | path])}, q}
-          else
-            q =
-              @directions
-              |> Enum.map(fn {{dx, dy}, label} ->
-                {{x + dx, y + dy}, label}
-              end)
-              |> Enum.reject(fn {next, _label} ->
-                MapSet.member?(visited, next) or Map.get(keypad, next) == nil
-              end)
-              |> Enum.reduce(q, fn {next, label}, q ->
-                visited = MapSet.put(visited, next)
-                :queue.in({next, [label | path], visited}, q)
-              end)
+          {{:value, {{x, y} = position, path, visited}}, q} ->
+            if Map.get(keypad, position) == button do
+              {{position, Enum.reverse(["A" | path])}, q}
+            else
+              q =
+                @directions
+                |> Enum.map(fn {{dx, dy}, label} ->
+                  {{x + dx, y + dy}, label}
+                end)
+                |> Enum.reject(fn {next, _label} ->
+                  MapSet.member?(visited, next) or Map.get(keypad, next) == nil
+                end)
+                |> Enum.reduce(q, fn {next, label}, q ->
+                  visited = MapSet.put(visited, next)
+                  :queue.in({next, [label | path], visited}, q)
+                end)
 
-            {nil, q}
-          end
-      end
-    end)
-    |> Enum.reject(&(&1 == nil))
-    |> Enum.uniq()
+              {nil, q}
+            end
+        end
+      end)
+      |> Enum.reject(&(&1 == nil))
+      |> Enum.uniq()
+
+    {button_position, _} = Enum.at(button_paths, 0)
+
+    paths_with_lenghts =
+      button_paths
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.map(fn path ->
+        {path, Enum.count(path)}
+      end)
+
+    shortest_path_length =
+      paths_with_lenghts
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.min()
+
+    shortest_paths =
+      paths_with_lenghts
+      |> Enum.filter(fn {_, len} -> len == shortest_path_length end)
+      |> Enum.map(&elem(&1, 0))
+
+    {button_position, shortest_paths}
   end
 
   def p2(_input) do
+    # codes =
+    #   input
+    #   |> String.split("\n")
+    #   |> Enum.map(&String.codepoints/1)
+
+    # numeric_keypad =
+    #   [["7", "8", "9"], ["4", "5", "6"], ["1", "2", "3"], [nil, "0", "A"]]
+    #   |> CoordinateMap.create_from_lists()
+
+    # directional_keypad =
+    #   [[nil, "^", "A"], ["<", "v", ">"]]
+    #   |> CoordinateMap.create_from_lists()
+
+    # find the path for each button one at a time all the way down in such a way that we can memoize the result
   end
 end
