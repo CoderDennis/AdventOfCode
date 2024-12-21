@@ -82,6 +82,8 @@ aoc 2024, 21 do
     q = :queue.new()
     q = :queue.in({start_position, [], MapSet.new([start_position])}, q)
 
+    # can we keep track of the length of the path along the way so we don't need to count the path length later?
+
     button_paths =
       Stream.unfold(q, fn q ->
         case :queue.out(q) do
