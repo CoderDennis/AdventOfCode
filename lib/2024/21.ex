@@ -1,6 +1,8 @@
 import AOC
 
 aoc 2024, 21 do
+  use Memoize
+
   alias Helpers.CoordinateMap
 
   def p1(input) do
@@ -19,9 +21,9 @@ aoc 2024, 21 do
 
     # IO.inspect({numeric_keypad, directional_keypad})
 
-    IO.inspect(path_to_button(directional_keypad, {0, 2}, "<"))
+    # IO.inspect(paths_to_button(directional_keypad, {0, 2}, "<"))
 
-    # step_1 = path_to_code(numeric_keypad, Enum.at(codes, 0))
+    # step_1 = paths_to_code(numeric_keypad, Enum.at(codes, 0))
 
     # step_2 = path_to_code(directional_keypad, step_1)
 
@@ -45,7 +47,7 @@ aoc 2024, 21 do
     # |> IO.inspect()
 
     codes
-    |> Enum.map(fn code ->
+    |> Stream.map(fn code ->
       number =
         code
         |> Enum.take(3)
@@ -53,12 +55,11 @@ aoc 2024, 21 do
         |> Integer.undigits()
 
       length =
-        path_to_code(numeric_keypad, code)
-        |> then(&path_to_code(directional_keypad, &1))
-        |> then(&path_to_code(directional_keypad, &1))
-        |> Enum.join()
-        |> IO.inspect()
-        |> String.length()
+        paths_to_code(numeric_keypad, code)
+        |> Stream.flat_map(&paths_to_code(directional_keypad, &1))
+        |> Stream.flat_map(&paths_to_code(directional_keypad, &1))
+        |> Stream.map(&Enum.count/1)
+        |> Enum.min()
 
       IO.inspect({length, number})
       number * length
@@ -66,38 +67,51 @@ aoc 2024, 21 do
     |> Enum.sum()
   end
 
-  def path_to_code(keypad, code) do
+  def paths_to_code(keypad, code) do
     {a_position, _} =
       keypad
       |> Enum.find(&(elem(&1, 1) == "A"))
 
     code
-    |> Enum.reduce({a_position, []}, fn button, {current_position, path} ->
-      {new_position, button_path} = path_to_button(keypad, current_position, button)
-      {new_position, path ++ button_path}
+    |> Enum.reduce({a_position, []}, fn button, {current_position, paths} ->
+      # {new_position, button_path} = paths_to_button(keypad, current_position, button)
+      button_paths = paths_to_button(keypad, current_position, button)
+      {new_position, _} = Enum.at(button_paths, 0)
+
+      new_paths =
+        button_paths
+        |> Enum.map(fn {_new_position, button_path} ->
+          paths
+          |> Enum.flat_map(fn path ->
+            path ++ button_path
+          end)
+        end)
+
+      {new_position, new_paths}
     end)
     |> elem(1)
+    |> Enum.uniq()
   end
 
   @directions [{{-1, 0}, "^"}, {{1, 0}, "v"}, {{0, -1}, "<"}, {{0, 1}, ">"}]
 
-  def path_to_button(keypad, start_position, button) do
+  defmemo paths_to_button(keypad, start_position, button) do
     q = :queue.new()
 
-    visited = MapSet.new([start_position])
+    # visited = MapSet.new([start_position])
 
-    q = :queue.in({start_position, []}, q)
+    q = :queue.in({start_position, [], MapSet.new([start_position])}, q)
 
-    Stream.unfold({q, visited}, fn {q, visited} ->
+    Stream.unfold(q, fn q ->
       case :queue.out(q) do
         {:empty, _q} ->
           nil
 
-        {{:value, {{x, y} = position, path}}, q} ->
+        {{:value, {{x, y} = position, path, visited}}, q} ->
           if Map.get(keypad, position) == button do
-            {{position, Enum.reverse(["A" | path])}, {q, visited}}
+            {{position, Enum.reverse(["A" | path])}, q}
           else
-            {q, visited} =
+            q =
               @directions
               |> Enum.map(fn {{dx, dy}, label} ->
                 {{x + dx, y + dy}, label}
@@ -105,20 +119,21 @@ aoc 2024, 21 do
               |> Enum.reject(fn {next, _label} ->
                 MapSet.member?(visited, next) or Map.get(keypad, next) == nil
               end)
-              |> Enum.reduce({q, visited}, fn {next, label}, {q, visited} ->
+              |> Enum.reduce(q, fn {next, label}, q ->
                 visited = MapSet.put(visited, next)
-                q = :queue.in({next, [label | path]}, q)
-                {q, visited}
+                :queue.in({next, [label | path], visited}, q)
               end)
 
-            {nil, {q, visited}}
+            {nil, q}
           end
       end
     end)
     |> Enum.reject(&(&1 == nil))
-    # |> Enum.to_list()
+    |> Enum.to_list()
+    |> Enum.uniq()
+
     # |> IO.inspect()
-    |> Enum.at(0)
+    # |> Enum.at(0)
   end
 
   def p2(_input) do
