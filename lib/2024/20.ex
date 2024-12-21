@@ -110,7 +110,6 @@ aoc 2024, 20 do
       |> CoordinateMap.create()
 
     # CoordinateMap.draw(map)
-
     {start_position, _} =
       map
       |> Enum.find(fn
@@ -118,12 +117,20 @@ aoc 2024, 20 do
         _ -> false
       end)
 
-    {picoseconds_with_no_cheat, _} =
-      times_to_exit_with_cheat_2(map, start_position, :used) |> Enum.at(0)
+    {end_position, _} =
+      map
+      |> Enum.find(fn
+        {_, "E"} -> true
+        _ -> false
+      end)
 
-    picoseconds_with_cheat = times_to_exit_with_cheat_2(map, start_position)
+    times_to_end = times_to_end_with_no_cheat(map, end_position)
 
-    {picoseconds_with_no_cheat, picoseconds_with_cheat}
+    picoseconds_with_no_cheat = Map.get(times_to_end, start_position)
+
+    # picoseconds_with_cheat = times_to_exit_with_cheat_2(map, start_position)
+
+    # {picoseconds_with_no_cheat, picoseconds_with_cheat}
 
     # picoseconds_with_cheat
     # |> Enum.map(&(picoseconds_with_no_cheat - elem(&1, 0)))
@@ -132,87 +139,34 @@ aoc 2024, 20 do
     # |> Enum.count()
   end
 
-  def times_to_exit_with_cheat_2(map, start_position, cheat_status \\ :available) do
-    q = :queue.new()
-
-    q = :queue.in({start_position, 0, cheat_status, [], MapSet.new()}, q)
-
-    Stream.unfold({q, MapSet.new()}, fn {q, visited} ->
-      case :queue.out(q) do
-        {:empty, _q} ->
-          nil
-
-        {{:value, {position, time_so_far, cheat_status, cheat_positions, path}} = _value, q} ->
-          if Map.get(map, position) == "E" do
-            {{time_so_far, cheat_positions}, {q, visited}}
-          else
-            new_items_for_queue =
-              do_times_to_exit(map, position, time_so_far, cheat_status, cheat_positions, path)
-
-            new_visited =
-              new_items_for_queue
-              |> Enum.map(fn {position, _time, cheat_status, _cheat_positions, _path} ->
-                {position, cheat_status}
-              end)
-              |> MapSet.new()
-              |> MapSet.union(visited)
-
-            q =
-              new_items_for_queue
-              |> :queue.from_list()
-              |> :queue.join(q)
-
-            {nil, {q, new_visited}}
-          end
-      end
-    end)
-    |> Enum.reject(&(&1 == nil))
-    |> Enum.uniq()
-  end
-
-  def do_times_to_exit(
-        map,
-        {x, y} = position,
-        time_so_far,
-        cheat_status,
-        cheat_positions,
-        path
-      ) do
-    # IO.inspect({position, cheat_status})
-
-    @directions
-    |> Enum.map(fn {dx, dy} = _next_direction ->
-      next_position = {x + dx, y + dy}
-      time = time_so_far + 1
-
-      {next_cheat_status, can_move} =
-        can_move_2?(cheat_status, Map.get(map, next_position))
-
-      cheat_positions =
-        case {cheat_status, next_cheat_status} do
-          {:available, _} -> [position]
-          {count, :used} when is_integer(count) -> [next_position | cheat_positions]
-          _ -> cheat_positions
-        end
-
-      if can_move and Map.has_key?(map, next_position) and
-           not MapSet.member?(path, next_position) do
-        {next_position, time, next_cheat_status, cheat_positions, MapSet.put(path, next_position)}
-      else
+  def times_to_end_with_no_cheat(map, end_position) do
+    Stream.unfold({end_position, 0, MapSet.new()}, fn
+      {nil, _, _} ->
         nil
-      end
+
+      {{x, y} = position, time_to_end, visited} ->
+        next_position =
+          @directions
+          |> Enum.map(fn {dx, dy} = _next_direction ->
+            {x + dx, y + dy}
+          end)
+          |> Enum.reject(&MapSet.member?(visited, &1))
+          |> Enum.find(fn position ->
+            Map.get(map, position) != "#"
+          end)
+
+        {{position, time_to_end},
+         {next_position, time_to_end + 1, MapSet.put(visited, next_position)}}
     end)
-    |> Enum.reject(&(&1 == nil))
+    |> Map.new()
   end
 
   # cheat status is like a state machine :available -> 20..1 -> :used
   # once a cheat is started, it must continue until track is found again
-  # first match is to prevent the edge case of revisiting start position
-  def can_move_2?(_, "S"), do: {:used, false}
   def can_move_2?(_, nil), do: {:used, false}
 
   def can_move_2?(:available, "."), do: {:available, true}
-  def can_move_2?(:available, "E"), do: {:available, true}
+  def can_move_2?(:available, "S"), do: {:available, true}
   def can_move_2?(:available, "#"), do: {20, true}
 
   def can_move_2?(:used, position_value), do: {:used, position_value != "#"}
