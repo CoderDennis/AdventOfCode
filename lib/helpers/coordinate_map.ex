@@ -29,6 +29,19 @@ defmodule Helpers.CoordinateMap do
     |> Map.new()
   end
 
+  def create_from_lists(lists, map \\ fn x -> x end) do
+    lists
+    |> Enum.with_index()
+    |> Enum.flat_map(fn {row, r} ->
+      row
+      |> Enum.with_index()
+      |> Enum.map(fn {value, c} ->
+        {{r, c}, map.(value)}
+      end)
+    end)
+    |> Map.new()
+  end
+
   @doc """
   Outputs contents of map via IO functions
   """

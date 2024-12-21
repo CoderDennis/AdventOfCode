@@ -128,6 +128,7 @@ aoc 2024, 20 do
 
     picoseconds_with_no_cheat = Map.get(times_to_end, start_position)
 
+    picoseconds_with_no_cheat
     # picoseconds_with_cheat = times_to_exit_with_cheat_2(map, start_position)
 
     # {picoseconds_with_no_cheat, picoseconds_with_cheat}
