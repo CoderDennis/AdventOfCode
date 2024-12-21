@@ -23,29 +23,6 @@ aoc 2024, 21 do
 
     # IO.inspect(paths_to_button(directional_keypad, {0, 2}, "<"))
 
-    # step_1 = paths_to_code(numeric_keypad, Enum.at(codes, 0))
-
-    # step_2 = path_to_code(directional_keypad, step_1)
-
-    # step_3 = path_to_code(directional_keypad, step_2)
-
-    # step_3
-    # |> Enum.join()
-    # |> IO.inspect()
-
-    # # v<A<AA>^>AvA^<Av>A^Av<<A>^>AvA^Av<<A>^>AAv<A>A^A<A>Av<A<A>^>AAA<Av>A^A
-    # # <vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A
-
-    # step_2
-    # |> Enum.join()
-    # |> IO.inspect()
-
-    # # v<<A>^>A<A>A<AAv>A^Av<AAA^>A
-    # # v<<A>>^A<A>AvA<^AA>A<vAAA>^A
-    # step_1
-    # |> Enum.join()
-    # |> IO.inspect()
-
     codes
     |> Stream.map(fn code ->
       number =
@@ -55,10 +32,19 @@ aoc 2024, 21 do
         |> Integer.undigits()
 
       length =
-        paths_to_code(numeric_keypad, code)
-        |> Stream.flat_map(&paths_to_code(directional_keypad, &1))
-        |> Stream.flat_map(&paths_to_code(directional_keypad, &1))
-        |> Stream.map(&Enum.count/1)
+        path_to_code(numeric_keypad, code)
+        |> elem(1)
+        |> IO.inspect()
+        |> Enum.flat_map(fn code ->
+          path_to_code(directional_keypad, code)
+          |> elem(1)
+        end)
+        |> Enum.flat_map(fn code ->
+          path_to_code(directional_keypad, code)
+          |> elem(1)
+        end)
+        # |> IO.inspect()
+        |> Enum.map(&Enum.count/1)
         |> Enum.min()
 
       IO.inspect({length, number})
@@ -67,30 +53,45 @@ aoc 2024, 21 do
     |> Enum.sum()
   end
 
-  def paths_to_code(keypad, code) do
+  def path_to_code(keypad, code) do
     {a_position, _} =
       keypad
       |> Enum.find(&(elem(&1, 1) == "A"))
 
-    code
-    |> Enum.reduce({a_position, []}, fn button, {current_position, paths} ->
-      # {new_position, button_path} = paths_to_button(keypad, current_position, button)
-      button_paths = paths_to_button(keypad, current_position, button)
-      {new_position, _} = Enum.at(button_paths, 0)
+    # {directional_a_position, _} =
+    #   directional_keypad
+    #   |> Enum.find(&(elem(&1, 1) == "A"))
 
-      new_paths =
+    code
+    |> Enum.reduce({a_position, [[]]}, fn button, {start_position, paths} ->
+      button_paths = paths_to_button(keypad, start_position, button)
+      {next_position, _} = Enum.at(button_paths, 0)
+
+      paths_with_lenghts =
         button_paths
-        |> Enum.map(fn {_new_position, button_path} ->
+        |> Enum.map(&elem(&1, 1))
+        |> Enum.map(fn path ->
+          {path, Enum.count(path)}
+        end)
+
+      shortest_path_length =
+        paths_with_lenghts
+        |> Enum.map(&elem(&1, 1))
+        |> Enum.min()
+
+      shortest_paths =
+        paths_with_lenghts
+        |> Enum.filter(fn {_, len} -> len == shortest_path_length end)
+        |> Enum.map(&elem(&1, 0))
+        |> Enum.flat_map(fn button_path ->
           paths
-          |> Enum.flat_map(fn path ->
-            path ++ button_path
+          |> Enum.map(fn path ->
+            Enum.concat(path, button_path)
           end)
         end)
 
-      {new_position, new_paths}
+      {next_position, shortest_paths}
     end)
-    |> elem(1)
-    |> Enum.uniq()
   end
 
   @directions [{{-1, 0}, "^"}, {{1, 0}, "v"}, {{0, -1}, "<"}, {{0, 1}, ">"}]
@@ -129,11 +130,7 @@ aoc 2024, 21 do
       end
     end)
     |> Enum.reject(&(&1 == nil))
-    |> Enum.to_list()
     |> Enum.uniq()
-
-    # |> IO.inspect()
-    # |> Enum.at(0)
   end
 
   def p2(_input) do
