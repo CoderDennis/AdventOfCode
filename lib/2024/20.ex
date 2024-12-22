@@ -3,8 +3,6 @@ import AOC
 alias Helpers.CoordinateMap
 
 aoc 2024, 20 do
-  use Memoize
-
   def p1(input) do
     map =
       input
@@ -21,6 +19,8 @@ aoc 2024, 20 do
 
     {picoseconds_with_no_cheat, _} =
       times_to_exit_with_cheat(map, start_position, :used) |> Enum.at(0)
+
+    IO.inspect(picoseconds_with_no_cheat)
 
     picoseconds_with_cheat = times_to_exit_with_cheat(map, start_position)
 
@@ -124,20 +124,26 @@ aoc 2024, 20 do
         _ -> false
       end)
 
-    times_to_end = times_to_end_with_no_cheat(map, end_position)
+    times_to_end =
+      times_to_end_with_no_cheat(map, end_position)
 
     picoseconds_with_no_cheat = Map.get(times_to_end, start_position)
 
-    picoseconds_with_no_cheat
-    # picoseconds_with_cheat = times_to_exit_with_cheat_2(map, start_position)
+    # IO.inspect(picoseconds_with_no_cheat)
 
-    # {picoseconds_with_no_cheat, picoseconds_with_cheat}
+    picoseconds_with_cheat = times_to_exit_with_cheat_2(map, start_position, times_to_end)
 
-    # picoseconds_with_cheat
-    # |> Enum.map(&(picoseconds_with_no_cheat - elem(&1, 0)))
+    picoseconds_with_cheat
+    |> Enum.reject(&(elem(&1, 0) == nil))
+    |> Enum.map(&{picoseconds_with_no_cheat - elem(&1, 0), &1})
+    |> Enum.filter(&(elem(&1, 0) >= 50))
+    |> IO.inspect()
+    |> Enum.map(fn {_, {_, cheat}} -> cheat end)
+    |> Enum.uniq()
+    |> Enum.count()
 
-    # |> Enum.filter(&(&1 >= 50))
-    # |> Enum.count()
+    # example should give 285 that save 50 or more
+    # 254581 and 475381 were too low
   end
 
   def times_to_end_with_no_cheat(map, end_position) do
@@ -156,10 +162,77 @@ aoc 2024, 20 do
             Map.get(map, position) != "#"
           end)
 
-        {{position, time_to_end},
-         {next_position, time_to_end + 1, MapSet.put(visited, next_position)}}
+        {{position, time_to_end}, {next_position, time_to_end + 1, MapSet.put(visited, position)}}
     end)
     |> Map.new()
+  end
+
+  def times_to_exit_with_cheat_2(map, start_position, non_cheat_times) do
+    q = :queue.new()
+
+    q = :queue.in({start_position, 0, :available, [], MapSet.new([start_position])}, q)
+
+    Stream.unfold(q, fn q ->
+      case :queue.out(q) do
+        {:empty, _q} ->
+          nil
+
+        {{:value, {position, time_so_far, :used, cheat_positions, _path}}, q} ->
+          if Map.get(non_cheat_times, position) == nil do
+            {nil, q}
+          else
+            {{Map.get(non_cheat_times, position) + time_so_far, cheat_positions}, q}
+          end
+
+        {{:value, {{x, y} = position, time_so_far, cheat_status, cheat_positions, path}}, q} ->
+          # IO.inspect(value)
+
+          # if is_integer(cheat_status) do
+          #   IO.inspect({position, cheat_status})
+          # end
+
+          if Map.get(map, position) == "E" do
+            {{time_so_far, cheat_positions}, q}
+          else
+            new_q =
+              @directions
+              |> Enum.reduce(q, fn {dx, dy} = _next_direction, q ->
+                next_position = {x + dx, y + dy}
+
+                if Map.has_key?(map, next_position) and
+                     not MapSet.member?(path, next_position) do
+                  time = time_so_far + 1
+
+                  {next_cheat_status, can_move} =
+                    can_move_2?(cheat_status, Map.get(map, next_position))
+
+                  cheat_positions =
+                    case {cheat_status, next_cheat_status} do
+                      {:available, other} when is_integer(other) -> [position]
+                      {other, :used} when is_integer(other) -> [next_position | cheat_positions]
+                      _ -> cheat_positions
+                    end
+
+                  if can_move do
+                    :queue.in(
+                      {next_position, time, next_cheat_status, cheat_positions,
+                       MapSet.put(path, next_position)},
+                      q
+                    )
+                  else
+                    q
+                  end
+                else
+                  q
+                end
+              end)
+
+            {nil, new_q}
+          end
+      end
+    end)
+    |> Enum.reject(&(&1 == nil))
+    |> Enum.uniq()
   end
 
   # cheat status is like a state machine :available -> 20..1 -> :used
@@ -172,7 +245,7 @@ aoc 2024, 20 do
 
   def can_move_2?(:used, position_value), do: {:used, position_value != "#"}
 
-  def can_move_2?(1, "#"), do: {:used, false}
+  def can_move_2?(1, "#"), do: {:failed, false}
 
   def can_move_2?(count, "#"), do: {count - 1, true}
 

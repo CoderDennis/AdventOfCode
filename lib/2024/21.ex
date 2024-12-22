@@ -124,7 +124,7 @@ aoc 2024, 21 do
     {button_position, shortest_paths}
   end
 
-  def p2(input) do
+  def p2(_input) do
     # codes =
     #   input
     #   |> String.split("\n")
@@ -134,9 +134,9 @@ aoc 2024, 21 do
     #   [["7", "8", "9"], ["4", "5", "6"], ["1", "2", "3"], [nil, "0", "A"]]
     #   |> CoordinateMap.create_from_lists()
 
-    directional_keypad =
-      [[nil, "^", "A"], ["<", "v", ">"]]
-      |> CoordinateMap.create_from_lists()
+    # directional_keypad =
+    #   [[nil, "^", "A"], ["<", "v", ">"]]
+    #   |> CoordinateMap.create_from_lists()
 
     # possible approach:
     # find the path for each button one at a time all the way down in such a way that we can memoize the result at each step
