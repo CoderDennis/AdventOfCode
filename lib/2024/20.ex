@@ -133,13 +133,21 @@ aoc 2024, 20 do
 
     picoseconds_with_cheat = times_to_exit_with_cheat_2(map, start_position, times_to_end)
 
-    picoseconds_with_cheat
-    |> Enum.reject(&(elem(&1, 0) == nil))
-    |> Enum.map(&{picoseconds_with_no_cheat - elem(&1, 0), &1})
-    |> Enum.filter(&(elem(&1, 0) >= 50))
+    cheats =
+      picoseconds_with_cheat
+      |> Enum.reject(&(elem(&1, 0) == nil))
+      |> Enum.map(&{picoseconds_with_no_cheat - elem(&1, 0), &1})
+      |> Enum.filter(&(elem(&1, 0) == 72))
+      |> IO.inspect()
+      |> Enum.uniq_by(fn {_, {_, cheat}} -> cheat end)
+
+    cheats
+    |> Enum.reduce(%{}, fn {k, _}, map ->
+      Map.update(map, k, 1, fn v -> v + 1 end)
+    end)
     |> IO.inspect()
-    |> Enum.map(fn {_, {_, cheat}} -> cheat end)
-    |> Enum.uniq()
+
+    cheats
     |> Enum.count()
 
     # example should give 285 that save 50 or more
