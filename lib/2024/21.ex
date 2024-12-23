@@ -6,6 +6,14 @@ aoc 2024, 21 do
   alias Helpers.CoordinateMap
 
   def p1(input) do
+    solution(input, 2)
+  end
+
+  def p2(input) do
+    solution(input, 25)
+  end
+
+  def solution(input, robot_count) do
     codes =
       input
       |> String.split("\n")
@@ -19,9 +27,15 @@ aoc 2024, 21 do
       [[nil, "^", "A"], ["<", "v", ">"]]
       |> CoordinateMap.create_from_lists()
 
-    # IO.inspect({numeric_keypad, directional_keypad})
+    # approach thoughts:
+    # find the path for each button one at a time all the way down in such a way that we can memoize the result at each step
+    # each robot only resets at the begining of each sequence, but they always need to direct the keypad to the A.
 
-    # IO.inspect(paths_to_button(directional_keypad, {0, 2}, "<"))
+    # Sequence has to be found one button at a time. It’s more like DFS than BFS.
+    # At each button, dfs down to last layer and return the count there. Exploring all the available shortest paths.
+    # Keep track of location at the end of each lower layer.
+
+    # Between each layer, look up paths to button keeping track of last position.
 
     codes
     |> Stream.map(fn code ->
@@ -31,25 +45,25 @@ aoc 2024, 21 do
         |> Enum.map(&String.to_integer/1)
         |> Integer.undigits()
 
-      length =
-        path_to_code(numeric_keypad, code)
-        |> elem(1)
-        # |> IO.inspect()
-        |> Enum.flat_map(fn code ->
-          path_to_code(directional_keypad, code)
-          |> elem(1)
-        end)
-        |> Enum.flat_map(fn code ->
-          path_to_code(directional_keypad, code)
-          |> elem(1)
-        end)
-        # |> IO.inspect()
-        |> Enum.map(&Enum.count/1)
-        |> Enum.min()
-
-      IO.inspect({length, number})
-      number * length
+      {number, path_to_code(numeric_keypad, code)}
     end)
+    |> Enum.map(fn {number, paths} ->
+      {number,
+       paths
+       |> Enum.map(fn path ->
+         path
+         |> Enum.reduce({keypad_a_position(directional_keypad), 0}, fn btn, {position, sum} ->
+           {next_path_position, count} =
+             sequence_count_for_button(directional_keypad, position, btn, robot_count)
+
+           {next_path_position, sum + count}
+         end)
+       end)
+       |> Enum.map(&elem(&1, 1))
+       |> Enum.min()}
+      |> IO.inspect()
+    end)
+    |> Enum.map(fn {n, l} -> n * l end)
     |> Enum.sum()
   end
 
@@ -70,10 +84,11 @@ aoc 2024, 21 do
             Enum.concat(path, button_path)
           end)
         end)
-        |> keep_shortest_paths()
 
       {next_position, shortest_paths}
     end)
+    |> elem(1)
+    |> keep_shortest_paths()
   end
 
   @directions [{{-1, 0}, "^"}, {{1, 0}, "v"}, {{0, -1}, "<"}, {{0, 1}, ">"}]
@@ -124,42 +139,31 @@ aoc 2024, 21 do
     {button_position, shortest_paths}
   end
 
-  def p2(_input) do
-    # codes =
-    #   input
-    #   |> String.split("\n")
-    #   |> Enum.map(&String.codepoints/1)
+  defmemo sequence_count_for_button(_keypad, _start_position, _button, 0) do
+    {nil, 1}
+  end
 
-    # numeric_keypad =
-    #   [["7", "8", "9"], ["4", "5", "6"], ["1", "2", "3"], [nil, "0", "A"]]
-    #   |> CoordinateMap.create_from_lists()
+  defmemo sequence_count_for_button(keypad, start_position, button, robot_count) do
+    a_position = keypad_a_position(keypad)
 
-    # directional_keypad =
-    #   [[nil, "^", "A"], ["<", "v", ">"]]
-    #   |> CoordinateMap.create_from_lists()
+    {next_position, shortest_paths} =
+      shortest_paths_to_button(keypad, start_position, button)
 
-    # possible approach:
-    # find the path for each button one at a time all the way down in such a way that we can memoize the result at each step
-    # doesn't seem to work because each robot only resets at the begining of each sequence.
+    length =
+      shortest_paths
+      |> Enum.map(fn path ->
+        path
+        |> Enum.reduce({a_position, 0}, fn btn, {position, sum} ->
+          {next_path_position, count} =
+            sequence_count_for_button(keypad, position, btn, robot_count - 1)
 
-    # codes
-    # |> Stream.map(fn code ->
-    #   number =
-    #     code
-    #     |> Enum.take(3)
-    #     |> Enum.map(&String.to_integer/1)
-    #     |> Integer.undigits()
+          {next_path_position, sum + count}
+        end)
+      end)
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.min()
 
-    #   length =
-    #     path_to_code_2(numeric_keypad, directional_keypad, code, 2)
-    #     |> elem(1)
-    #     |> Enum.map(&Enum.count/1)
-    #     |> Enum.min()
-
-    #   IO.inspect({length, number})
-    #   number * length
-    # end)
-    # |> Enum.sum()
+    {next_position, length}
   end
 
   def keep_shortest_paths(paths) do
@@ -171,5 +175,11 @@ aoc 2024, 21 do
       end)
 
     Map.get(length_map, shortest_length)
+  end
+
+  defmemo keypad_a_position(keypad) do
+    keypad
+    |> Enum.find(&(elem(&1, 1) == "A"))
+    |> elem(0)
   end
 end
