@@ -6,8 +6,9 @@ aoc 2024, 24 do
 
     {:ok, wire_values} = run(wires, nil_wires, gates)
 
-    wire_values
-    |> get_number("z")
+    {wires, nil_wires, gates,
+     wire_values
+     |> get_number("z")}
   end
 
   def p2(input) do
@@ -19,110 +20,105 @@ aoc 2024, 24 do
 
     # {get_binary_digits(wires, "x"), get_binary_digits(wires, "y")}
 
-    ones = Stream.repeatedly(fn -> 1 end) |> Enum.take(12)
-    zeros = Stream.repeatedly(fn -> 0 end) |> Enum.take(12)
+    # I want Integer.pow(2, 56) - 1 to be the expected z answer.
 
-    all_ones_value =
-      Stream.repeatedly(fn -> 1 end)
-      |> Enum.take(46)
-      |> Integer.undigits(2)
+    x = Integer.pow(2, 45) - 1
+    y = 1
 
-    y1 =
-      ones
-      |> Integer.undigits(2)
-
-    x1 = all_ones_value - y1
-
-    IO.inspect({x1, y1})
+    wires =
+      wires
+      |> set_number(x, "x")
+      |> set_number(y, "y")
 
     {swap1, swap2} =
-      wires
-      |> set_number(x1, "x")
-      |> set_number(y1, "y")
-      |> swap_so_addition_works(nil_wires, gates, 12)
+      swap_for_most_bits(wires, nil_wires, gates, MapSet.new())
       |> IO.inspect()
-
-    y2 = Enum.concat(ones, zeros) |> Integer.undigits(2)
-    x2 = all_ones_value - y2
 
     gates = swap_gates(gates, swap1, swap2)
 
+    swapped = MapSet.new([swap1, swap2])
+
     {swap3, swap4} =
-      wires
-      |> set_number(x2, "x")
-      |> set_number(y2, "y")
-      |> swap_so_addition_works(nil_wires, gates, 24)
+      swap_for_most_bits(wires, nil_wires, gates, swapped)
       |> IO.inspect()
 
     gates = swap_gates(gates, swap3, swap4)
 
-    y3 = Enum.concat([ones, zeros, zeros]) |> Integer.undigits(2)
-    x3 = all_ones_value - y3
+    swapped =
+      swapped
+      |> MapSet.put(swap3)
+      |> MapSet.put(swap4)
+
+    wires =
+      wires
+      |> set_number(y, "x")
+      |> set_number(x, "y")
 
     {swap5, swap6} =
-      wires
-      |> set_number(x3, "x")
-      |> set_number(y3, "y")
-      |> swap_so_addition_works(nil_wires, gates, 36)
+      swap_for_most_bits(wires, nil_wires, gates, swapped)
       |> IO.inspect()
 
     gates = swap_gates(gates, swap5, swap6)
 
-    y4 = Enum.concat([ones |> Enum.take(10), zeros, zeros, zeros]) |> Integer.undigits(2)
-    x4 = all_ones_value - y4
+    swapped =
+      swapped
+      |> MapSet.put(swap5)
+      |> MapSet.put(swap6)
 
     {swap7, swap8} =
-      wires
-      |> set_number(x4, "x")
-      |> set_number(y4, "y")
-      |> swap_so_addition_works(nil_wires, gates, 56)
-      |> IO.inspect()
+      swap_for_most_bits(wires, nil_wires, gates, swapped)
 
     [swap1, swap2, swap3, swap4, swap5, swap6, swap7, swap8]
     |> Enum.sort()
     |> Enum.join(",")
+
+    # dhm,gsv,kcv,mrb,pnr,z00,z08,z16 was the wrong answer
+    # btj,crw,fpk,kcv,kvn,qjd,rkm,tkv also wrong
+    # jbc,kcv,mrb,rkm,swk,tnr,z08,z16 also wrong
+
+    # {{"tnr", "z08"}, 16}
+    # {"tnr", "z08"}
+    # {{"mrb", "z16"}, 32}
+    # {"mrb", "z16"}
+    # {{"jbc", "kcv"}, 46}
+    # {"jbc", "kcv"}
+    # {{"rkm", "swk"}, 46}
   end
 
-  def swap_so_addition_works(wires, nil_wires, gates, digit_count) do
-    x =
-      get_number(wires, "x")
-      |> IO.inspect(label: "x")
+  def swap_for_most_bits(wires, nil_wires, gates, already_swapped) do
+    # x =
+    #   get_number(wires, "x")
+    #   |> IO.inspect(label: "x")
 
-    y =
-      get_number(wires, "y")
-      |> IO.inspect(label: "y")
+    # y =
+    #   get_number(wires, "y")
+    #   |> IO.inspect(label: "y")
 
-    expected_z = x + y
+    # expected_z = x + y
 
-    IO.inspect(expected_z, label: "expected_z")
+    # IO.inspect(expected_z, label: "expected_z")
 
-    expected_z |> Integer.digits(2) |> IO.inspect()
+    # expected_z |> Integer.digits(2) |> IO.inspect()
 
     # when swapping gate output wires, we could create loops or configurations that don't terminate
-    gate_keys = Map.keys(gates)
+    gate_keys =
+      Map.keys(gates)
+      |> MapSet.new()
+      |> MapSet.difference(already_swapped)
 
     pairs =
       for(x <- gate_keys, y <- gate_keys, x != y, do: [x, y] |> Enum.sort() |> List.to_tuple())
       |> Enum.uniq()
 
     pairs
-    |> Enum.drop_while(fn {x, y} ->
+    |> Enum.map(fn {x, y} ->
       # IO.inspect({x, y})
-      swapped_gates = swap_gates(gates, x, y)
 
-      case run(wires, nil_wires, swapped_gates) do
-        {:ok, wire_values} ->
-          if digit_count > 36 do
-            wire_values |> get_number("z") != expected_z
-          else
-            count_z_digits(wire_values) < digit_count
-          end
-
-        {:error, _} ->
-          true
-      end
+      {{x, y}, score_system(wires, nil_wires, swap_gates(gates, x, y))}
     end)
-    |> Enum.at(0)
+    |> Enum.max_by(&elem(&1, 1))
+    |> IO.inspect()
+    |> then(&elem(&1, 0))
   end
 
   def swap_gates(gates, x, y) do
@@ -150,14 +146,28 @@ aoc 2024, 24 do
     end)
   end
 
-  def count_z_digits(wires) do
-    wires
-    |> Enum.filter(fn {wire, _value} -> String.starts_with?(wire, "z") end)
-    |> Enum.sort_by(&elem(&1, 0))
-    |> Enum.map(&elem(&1, 1))
-    |> Enum.take_while(& &1)
-    # |> IO.inspect()
-    |> Enum.count()
+  def score_system(wires, nil_wires, gates) do
+    case run(wires, nil_wires, gates) do
+      {:error, _} ->
+        0
+
+      {:ok, _} ->
+        0..45
+        |> Enum.take_while(fn digit ->
+          check = Integer.pow(2, digit)
+
+          {:ok, digit_wires} =
+            wires
+            |> set_number(check - 1, "x")
+            |> set_number(1, "y")
+            |> run(nil_wires, gates)
+
+          digit_wires
+          |> get_number("z")
+          |> then(&(Bitwise.band(&1, check) == check))
+        end)
+        |> Enum.count()
+    end
   end
 
   @doc """
@@ -196,7 +206,21 @@ aoc 2024, 24 do
     end)
   end
 
-  def run(wires, nil_wires, gates) do
+  def run(wires, nil_wires, gates, x \\ nil, y \\ nil) do
+    wires =
+      if is_nil(x) do
+        wires
+      else
+        wires |> set_number(x, "x")
+      end
+
+    wires =
+      if is_nil(y) do
+        wires
+      else
+        wires |> set_number(y, "y")
+      end
+
     if MapSet.size(nil_wires) == 0 do
       {:ok, wires}
     else
