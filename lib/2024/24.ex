@@ -2,123 +2,21 @@ import AOC
 
 aoc 2024, 24 do
   def p1(input) do
-    {wires, nil_wires, gates} = parse_input(input)
+    {wires, gates} = parse_input(input)
 
-    {:ok, wire_values} = run(wires, nil_wires, gates)
+    {:ok, wire_values} = run(wires, gates)
 
-    {wires, nil_wires, gates,
-     wire_values
-     |> get_number("z")}
+    wire_values
+    |> get_number("z")
   end
 
   def p2(input) do
-    {wires, nil_wires, gates} = parse_input(input)
+    {wires, gates} = parse_input(input)
 
-    # optimizaion strategy: look for matching bits with a given swap,
-    # then look for another swap that matches more bits
-    # expect each correct pair swap to affect 12 bits, with the last one affecting the most significant 10 bits
-
-    # {get_binary_digits(wires, "x"), get_binary_digits(wires, "y")}
-
-    # I want Integer.pow(2, 56) - 1 to be the expected z answer.
-
-    x = Integer.pow(2, 45) - 1
-    y = 1
-
-    wires =
-      wires
-      |> set_number(x, "x")
-      |> set_number(y, "y")
-
-    {swap1, swap2} =
-      swap_for_most_bits(wires, nil_wires, gates, MapSet.new())
-      |> IO.inspect()
-
-    gates = swap_gates(gates, swap1, swap2)
-
-    swapped = MapSet.new([swap1, swap2])
-
-    {swap3, swap4} =
-      swap_for_most_bits(wires, nil_wires, gates, swapped)
-      |> IO.inspect()
-
-    gates = swap_gates(gates, swap3, swap4)
-
-    swapped =
-      swapped
-      |> MapSet.put(swap3)
-      |> MapSet.put(swap4)
-
-    wires =
-      wires
-      |> set_number(y, "x")
-      |> set_number(x, "y")
-
-    {swap5, swap6} =
-      swap_for_most_bits(wires, nil_wires, gates, swapped)
-      |> IO.inspect()
-
-    gates = swap_gates(gates, swap5, swap6)
-
-    swapped =
-      swapped
-      |> MapSet.put(swap5)
-      |> MapSet.put(swap6)
-
-    {swap7, swap8} =
-      swap_for_most_bits(wires, nil_wires, gates, swapped)
-
-    [swap1, swap2, swap3, swap4, swap5, swap6, swap7, swap8]
-    |> Enum.sort()
-    |> Enum.join(",")
-
+    {wires, gates}
     # dhm,gsv,kcv,mrb,pnr,z00,z08,z16 was the wrong answer
     # btj,crw,fpk,kcv,kvn,qjd,rkm,tkv also wrong
     # jbc,kcv,mrb,rkm,swk,tnr,z08,z16 also wrong
-
-    # {{"tnr", "z08"}, 16}
-    # {"tnr", "z08"}
-    # {{"mrb", "z16"}, 32}
-    # {"mrb", "z16"}
-    # {{"jbc", "kcv"}, 46}
-    # {"jbc", "kcv"}
-    # {{"rkm", "swk"}, 46}
-  end
-
-  def swap_for_most_bits(wires, nil_wires, gates, already_swapped) do
-    # x =
-    #   get_number(wires, "x")
-    #   |> IO.inspect(label: "x")
-
-    # y =
-    #   get_number(wires, "y")
-    #   |> IO.inspect(label: "y")
-
-    # expected_z = x + y
-
-    # IO.inspect(expected_z, label: "expected_z")
-
-    # expected_z |> Integer.digits(2) |> IO.inspect()
-
-    # when swapping gate output wires, we could create loops or configurations that don't terminate
-    gate_keys =
-      Map.keys(gates)
-      |> MapSet.new()
-      |> MapSet.difference(already_swapped)
-
-    pairs =
-      for(x <- gate_keys, y <- gate_keys, x != y, do: [x, y] |> Enum.sort() |> List.to_tuple())
-      |> Enum.uniq()
-
-    pairs
-    |> Enum.map(fn {x, y} ->
-      # IO.inspect({x, y})
-
-      {{x, y}, score_system(wires, nil_wires, swap_gates(gates, x, y))}
-    end)
-    |> Enum.max_by(&elem(&1, 1))
-    |> IO.inspect()
-    |> then(&elem(&1, 0))
   end
 
   def swap_gates(gates, x, y) do
@@ -146,34 +44,10 @@ aoc 2024, 24 do
     end)
   end
 
-  def score_system(wires, nil_wires, gates) do
-    case run(wires, nil_wires, gates) do
-      {:error, _} ->
-        0
-
-      {:ok, _} ->
-        0..45
-        |> Enum.take_while(fn digit ->
-          check = Integer.pow(2, digit)
-
-          {:ok, digit_wires} =
-            wires
-            |> set_number(check - 1, "x")
-            |> set_number(1, "y")
-            |> run(nil_wires, gates)
-
-          digit_wires
-          |> get_number("z")
-          |> then(&(Bitwise.band(&1, check) == check))
-        end)
-        |> Enum.count()
-    end
-  end
-
   @doc """
   returns dictionary of wire_name => true/false values for the given number
   """
-  def number_wires(number, starts_with) do
+  def number_to_wires(number, starts_with) do
     number
     |> Integer.digits(2)
     |> Enum.reverse()
@@ -196,7 +70,7 @@ aoc 2024, 24 do
   end
 
   def set_number(wires, number, starts_with) do
-    number_wires = number_wires(number, starts_with)
+    number_wires = number_to_wires(number, starts_with)
     # Map.merge(wires, number_wires)
 
     wires
@@ -206,20 +80,12 @@ aoc 2024, 24 do
     end)
   end
 
-  def run(wires, nil_wires, gates, x \\ nil, y \\ nil) do
-    wires =
-      if is_nil(x) do
-        wires
-      else
-        wires |> set_number(x, "x")
-      end
-
-    wires =
-      if is_nil(y) do
-        wires
-      else
-        wires |> set_number(y, "y")
-      end
+  def run(wires, gates) do
+    nil_wires =
+      wires
+      |> Enum.filter(&is_nil(elem(&1, 1)))
+      |> Enum.map(&elem(&1, 0))
+      |> MapSet.new()
 
     if MapSet.size(nil_wires) == 0 do
       {:ok, wires}
@@ -227,7 +93,7 @@ aoc 2024, 24 do
       new_wire_values =
         nil_wires
         |> Enum.map(fn wire ->
-          {wire, gates[wire].(wires)}
+          {wire, gate_fn(wires, gates[wire])}
         end)
         |> Map.new()
 
@@ -243,10 +109,24 @@ aoc 2024, 24 do
       if remaining_nil_wires == nil_wires do
         {:error, remaining_nil_wires}
       else
-        run(wires, remaining_nil_wires, gates)
+        run(wires, gates)
       end
     end
   end
+
+  def gate_fn(wires, {wire1, wire2, gate}) do
+    x = Map.get(wires, wire1)
+    y = Map.get(wires, wire2)
+
+    do_gate(x, y, gate)
+  end
+
+  def do_gate(nil, _, _), do: nil
+  def do_gate(_, nil, _), do: nil
+
+  def do_gate(x, y, :and), do: x && y
+  def do_gate(x, y, :or), do: x || y
+  def do_gate(x, y, :xor), do: x != y
 
   @doc """
   returns:
@@ -311,40 +191,13 @@ aoc 2024, 24 do
           |> Map.put_new(wire2, nil)
           |> Map.put_new(wire_out, nil)
 
-        gate_fn =
-          case gate do
-            :and ->
-              fn
-                %{^wire1 => x, ^wire2 => y} when is_nil(x) or is_nil(y) -> nil
-                %{^wire1 => x, ^wire2 => y} -> x && y
-              end
-
-            :or ->
-              fn
-                %{^wire1 => x, ^wire2 => y} when is_nil(x) or is_nil(y) -> nil
-                %{^wire1 => x, ^wire2 => y} -> x || y
-              end
-
-            :xor ->
-              fn
-                %{^wire1 => x, ^wire2 => y} when is_nil(x) or is_nil(y) -> nil
-                %{^wire1 => x, ^wire2 => y} -> x != y
-              end
-          end
-
         gates =
           gates
-          |> Map.put(wire_out, gate_fn)
+          |> Map.put(wire_out, {wire1, wire2, gate})
 
         {wires, gates}
       end)
 
-    nil_wires =
-      wires
-      |> Enum.filter(fn {_, val} -> is_nil(val) end)
-      |> Enum.map(&elem(&1, 0))
-      |> MapSet.new()
-
-    {wires, nil_wires, gates}
+    {wires, gates}
   end
 end
