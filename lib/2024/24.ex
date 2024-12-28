@@ -4,22 +4,112 @@ aoc 2024, 24 do
   def p1(input) do
     {wires, gates} = parse_input(input)
 
-    {:ok, wire_values} = run(wires, gates)
-
-    wire_values
-    |> get_number("z")
+    run(wires, gates)
   end
 
   def p2(input) do
-    {wires, gates} = parse_input(input)
+    {wires, gates} =
+      parse_input(input)
 
-    {wires, gates}
-    # dhm,gsv,kcv,mrb,pnr,z00,z08,z16 was the wrong answer
-    # btj,crw,fpk,kcv,kvn,qjd,rkm,tkv also wrong
-    # jbc,kcv,mrb,rkm,swk,tnr,z08,z16 also wrong
+    # borrows implementation from https://github.com/eagely/adventofcode/blob/main/src/main/kotlin/solutions/y2024/Day24.kt shared via reddit
+    # I worked on my approach for 3 days before reading reddit and trying to adopt this approach.
+
+    nxz =
+      gates
+      |> Enum.filter(fn
+        {"z45", _} -> false
+        {_z, {_a, _b, :xor}} -> false
+        {<<"z", _wire_number::binary-size(2)>>, _} -> true
+        _ -> false
+      end)
+      |> Enum.map(&elem(&1, 0))
+      |> MapSet.new()
+      |> IO.inspect()
+
+    # xnz =
+    #   gates
+    #   |> Enum.filter(fn
+    #     {<<out_start::binary-size(1), _>>,
+    #      {<<a_start::binary-size(1), _>>, <<b_start::binary-size(1), _>>, :xor}}
+    #     when out_start != "z" and
+    #            a_start != "x" and
+    #            a_start != "y" and
+    #            b_start != "x" and
+    #            b_start != "y" ->
+    #       true
+
+    #     _ ->
+    #       false
+    #   end)
+    #   |> Enum.map(&elem(&1, 0))
+    #   |> MapSet.new()
+    #   |> IO.inspect()
+
+    # the commented code above didn't work, so I found them by manually searching through the input
+    # to find all the XOR gates that didn't have x and y inputs or z output.
+
+    xnz =
+      MapSet.new(["cdj", "gfm", "mrb"])
+      |> IO.inspect()
+
+    gates =
+      xnz
+      |> Enum.reduce(gates, fn i, gates ->
+        b = first_z_that_uses_out(gates, i)
+        swap_gates(gates, i, b)
+      end)
+
+    falseCarry =
+      (get_number(wires, "x") + get_number(wires, "y"))
+      |> Bitwise.bxor(run(wires, gates))
+      |> count_trailing_zeros()
+      |> Integer.to_string()
+
+    [
+      gates
+      |> Enum.filter(fn {_, {a, b, _}} ->
+        String.ends_with?(a, falseCarry) and String.ends_with?(b, falseCarry)
+      end)
+      |> Enum.map(&elem(&1, 0)),
+      nxz,
+      xnz
+    ]
+    |> Enum.concat()
+    |> Enum.sort()
+    |> Enum.join(",")
+  end
+
+  def first_z_that_uses_out(gates, gate_out) do
+    # IO.inspect(gate_out)
+
+    {out, _} =
+      gates
+      |> Enum.find({"abc", nil}, fn {_, {a, b, _}} -> a == gate_out or b == gate_out end)
+
+    if String.starts_with?(out, "z") do
+      out
+      |> String.slice(1, 2)
+      |> String.to_integer()
+      |> then(&(&1 - 1))
+      |> Integer.to_string()
+      |> String.pad_leading(2, "0")
+      |> then(&"z#{&1}")
+    else
+      first_z_that_uses_out(gates, out)
+    end
+  end
+
+  def count_trailing_zeros(number) do
+    number
+    |> Integer.digits(2)
+    |> Enum.reverse()
+    |> Enum.take_while(&(&1 == 0))
+    |> Enum.count()
   end
 
   def swap_gates(gates, x, y) do
+    IO.inspect({x, y}, label: "swap_gates")
+
     x_val = Map.get(gates, x)
     y_val = Map.get(gates, y)
 
@@ -88,7 +178,7 @@ aoc 2024, 24 do
       |> MapSet.new()
 
     if MapSet.size(nil_wires) == 0 do
-      {:ok, wires}
+      get_number(wires, "z")
     else
       new_wire_values =
         nil_wires
@@ -100,17 +190,7 @@ aoc 2024, 24 do
       wires =
         Map.merge(wires, new_wire_values)
 
-      remaining_nil_wires =
-        new_wire_values
-        |> Enum.filter(&is_nil(elem(&1, 1)))
-        |> Enum.map(&elem(&1, 0))
-        |> MapSet.new()
-
-      if remaining_nil_wires == nil_wires do
-        {:error, remaining_nil_wires}
-      else
-        run(wires, gates)
-      end
+      run(wires, gates)
     end
   end
 
@@ -131,7 +211,7 @@ aoc 2024, 24 do
   @doc """
   returns:
   wires as map of wire values: true | false | nil
-  gates as map of wire => function that uses pattern matching on map of wires to get input values
+  gates as map of wire => tuple of {wire1, wire2, op}
   """
   def parse_input(input) do
     {wire_lines, gate_lines} =
