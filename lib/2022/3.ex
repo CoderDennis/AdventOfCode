@@ -1,8 +1,9 @@
 import AOC
 
 aoc 2022, 3 do
-  def p1 do
-    input_stream()
+  def p1(input) do
+    input
+    |> String.split("\n")
     |> Enum.map(&find_item/1)
     |> Enum.map(&item_priority/1)
     |> Enum.sum()
@@ -29,8 +30,9 @@ aoc 2022, 3 do
     end
   end
 
-  def p2 do
-    input_stream()
+  def p2(input) do
+    input
+    |> String.split("\n")
     |> Enum.map(&String.codepoints/1)
     |> Enum.chunk_every(3)
     |> Enum.map(&find_common_item/1)

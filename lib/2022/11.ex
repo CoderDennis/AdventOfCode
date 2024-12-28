@@ -1,13 +1,13 @@
 import AOC
 
 aoc 2022, 11 do
-  def p1 do
+  def p1(_) do
     solve(20)
   end
 
   # 17457804000 was too high
 
-  def p2 do
+  def p2(_) do
     solve(10000)
   end
 
@@ -29,7 +29,7 @@ aoc 2022, 11 do
     |> Enum.reduce(monkeys, &turn/2)
   end
 
-  @example_mod 23 * 19 * 13 * 17
+  # @example_mod 23 * 19 * 13 * 17
   @mod 13 * 2 * 7 * 17 * 5 * 11 * 3 * 19
 
   def turn(monkey_index, monkeys) do

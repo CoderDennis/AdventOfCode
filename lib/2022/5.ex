@@ -1,24 +1,24 @@
 import AOC
 
 aoc 2022, 5 do
-  def p1 do
-    helper(&perform_op1/2)
+  def p1(input) do
+    helper(input, &perform_op1/2)
   end
 
-  def p2 do
-    helper(&perform_op2/2)
+  def p2(input) do
+    helper(input, &perform_op2/2)
   end
 
-  defp helper(fun) do
-    input =
-      input_path()
-      |> File.stream!()
+  defp helper(input, fun) do
+    input_lines =
+      input
+      |> String.split("\n")
 
     stacks =
-      input
+      input_lines
       |> get_stacks()
 
-    input
+    input_lines
     |> Stream.drop_while(fn line -> line != "\n" end)
     |> Stream.drop(1)
     |> Enum.reduce(stacks, fn line, acc ->
@@ -58,9 +58,9 @@ aoc 2022, 5 do
     end)
   end
 
-  defp get_stacks(input) do
-    input
-    |> Stream.take_while(fn line -> line != "\n" end)
+  defp get_stacks(input_lines) do
+    input_lines
+    |> Enum.take_while(fn line -> line != "\n" end)
     |> Enum.map(&String.codepoints/1)
     |> Enum.zip_with(& &1)
     |> Enum.map(&Enum.reverse/1)

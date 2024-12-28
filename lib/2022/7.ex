@@ -3,8 +3,8 @@ import AOC
 aoc 2022, 7 do
   use Memoize
 
-  def p1 do
-    fs = get_fs_map()
+  def p1(input) do
+    fs = get_fs_map(input)
 
     fs
     |> Map.keys()
@@ -13,8 +13,8 @@ aoc 2022, 7 do
     |> Enum.sum()
   end
 
-  def p2 do
-    fs = get_fs_map()
+  def p2(input) do
+    fs = get_fs_map(input)
 
     unused_space = 70_000_000 - get_dir_size(fs, "/")
     needed_space = 30_000_000 - unused_space
@@ -27,9 +27,10 @@ aoc 2022, 7 do
     |> Enum.min()
   end
 
-  defp get_fs_map() do
+  defp get_fs_map(input) do
     {fs, _} =
-      input_stream()
+      input
+      |> String.split("\n")
       |> Stream.map(&String.split/1)
       |> Enum.reduce({%{"/" => %{dirs: [], files: []}}, ["/"]}, fn line,
                                                                    {fs, path = [_ | rest_of_path]} ->

@@ -1,13 +1,13 @@
 import AOC
 
 aoc 2022, 6 do
-  def p1 do
-    input_string()
+  def p1(input) do
+    input
     |> find_unique_chunk(4)
   end
 
-  def p2 do
-    input_string()
+  def p2(input) do
+    input
     |> find_unique_chunk(14)
   end
 

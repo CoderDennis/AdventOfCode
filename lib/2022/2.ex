@@ -1,14 +1,16 @@
 import AOC
 
 aoc 2022, 2 do
-  def p1 do
-    input_stream()
+  def p1(input) do
+    input
+    |> String.split("\n")
     |> Enum.map(fn line -> score1(String.codepoints(line)) end)
     |> Enum.sum()
   end
 
-  def p2 do
-    input_stream()
+  def p2(input) do
+    input
+    |> String.split("\n")
     |> Enum.map(fn line -> score2(String.codepoints(line)) end)
     |> Enum.sum()
   end

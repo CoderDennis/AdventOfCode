@@ -1,8 +1,9 @@
 import AOC
 
 aoc 2022, 1 do
-  def p1 do
-    input_stream(2022, 1)
+  def p1(input) do
+    input
+    |> String.split("\n")
     |> Enum.reduce({0, 0}, fn line, {ans, current} ->
       if line == "" do
         {max(ans, current), 0}
@@ -13,8 +14,9 @@ aoc 2022, 1 do
     |> elem(0)
   end
 
-  def p2 do
-    input_stream(2022, 1)
+  def p2(input) do
+    input
+    |> String.split("\n")
     |> Enum.reduce([0], fn line, totals ->
       if line == "" do
         [0 | totals]

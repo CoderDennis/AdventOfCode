@@ -1,9 +1,10 @@
 import AOC
 
 aoc 2022, 12 do
-  def p1 do
+  def p1(input) do
     {map, s, e} =
-      input_stream()
+      input
+      |> String.split("\n")
       |> Enum.map(&String.to_charlist/1)
       |> Enum.with_index()
       |> Enum.reduce({%{}, {0, 0}, {0, 0}}, fn {line, row}, {map, s, e} ->
@@ -84,9 +85,10 @@ aoc 2022, 12 do
     end
   end
 
-  def p2 do
+  def p2(input) do
     {map, s, e} =
-      input_stream()
+      input
+      |> String.split("\n")
       |> Enum.map(&String.to_charlist/1)
       |> Enum.with_index()
       |> Enum.reduce({%{}, [], {0, 0}}, fn {line, row}, {map, s, e} ->

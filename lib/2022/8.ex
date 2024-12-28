@@ -1,8 +1,8 @@
 import AOC
 
 aoc 2022, 8 do
-  def p1 do
-    grid = read_input()
+  def p1(input) do
+    grid = read_input(input)
 
     rows = map_size(grid)
     cols = map_size(grid[0])
@@ -20,8 +20,8 @@ aoc 2022, 8 do
     interior_count + edge_count
   end
 
-  def p2 do
-    grid = read_input()
+  def p2(input) do
+    grid = read_input(input)
 
     rows = map_size(grid)
     cols = map_size(grid[0])
@@ -134,8 +134,9 @@ aoc 2022, 8 do
     end
   end
 
-  defp read_input() do
-    input_stream()
+  defp read_input(input) do
+    input
+    |> String.split("\n")
     |> Stream.map(&String.codepoints/1)
     |> Stream.with_index()
     |> Enum.reduce(%{}, fn {line, row}, map ->

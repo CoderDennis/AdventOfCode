@@ -1,10 +1,9 @@
 import AOC
 
 aoc 2022, 15 do
-  def p1 do
+  def p1(input) do
     sensors =
-      input_stream()
-      |> parse_input()
+      parse_input(input)
 
     {{min_x, max_x}, beacons} =
       sensors
@@ -34,10 +33,9 @@ aoc 2022, 15 do
     end)
   end
 
-  def p2 do
+  def p2(input) do
     sensors =
-      example_stream()
-      |> parse_input()
+      parse_input(input)
 
     sensors_with_distance =
       sensors
@@ -81,8 +79,9 @@ aoc 2022, 15 do
     |> Stream.run()
   end
 
-  def parse_input(stream) do
-    stream
+  def parse_input(input) do
+    input
+    |> String.split("\n")
     |> Enum.map(&String.split/1)
     |> Enum.map(fn [_, _, "x=" <> sx, "y=" <> sy, _, _, _, _, "x=" <> bx, "y=" <> by] ->
       {sx |> String.trim_trailing(",") |> String.to_integer(),

@@ -1,10 +1,9 @@
 import AOC
 
 aoc 2022, 14 do
-  def p1 do
+  def p1(input) do
     rocks =
-      input_stream()
-      |> parse_input()
+      parse_input(input)
       |> find_rocks()
 
     # |> IO.inspect()
@@ -18,10 +17,9 @@ aoc 2022, 14 do
     |> Enum.count()
   end
 
-  def p2 do
+  def p2(input) do
     rocks =
-      example_stream()
-      |> parse_input()
+      parse_input(input)
       |> find_rocks()
 
     # |> IO.inspect()
@@ -96,8 +94,9 @@ aoc 2022, 14 do
     |> Enum.map(&{&1, y1})
   end
 
-  def parse_input(stream) do
-    stream
+  def parse_input(input) do
+    input
+    |> String.split("\n")
     |> Enum.map(fn line ->
       line
       |> String.split(" -> ")

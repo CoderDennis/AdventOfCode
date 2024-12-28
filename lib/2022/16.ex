@@ -3,9 +3,8 @@ import AOC
 aoc 2022, 16 do
   use Memoize
 
-  def p1 do
-    input_stream()
-    |> parse_input()
+  def p1(input) do
+    parse_input(input)
     |> explore("AA", 30, 0)
   end
 
@@ -45,6 +44,7 @@ aoc 2022, 16 do
 
   def parse_input(input) do
     input
+    |> String.split("\n")
     |> Enum.map(&String.split/1)
     |> Enum.reduce(%{}, fn [
                              _valve,

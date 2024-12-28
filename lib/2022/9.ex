@@ -1,16 +1,16 @@
 import AOC
 
 aoc 2022, 9 do
-  def p1 do
-    get_head_positions()
+  def p1(input) do
+    get_head_positions(input)
     |> get_tail_positions()
     |> MapSet.new()
     |> MapSet.size()
   end
 
-  def p2 do
+  def p2(input) do
     1..9
-    |> Enum.reduce(get_head_positions(), fn _, acc ->
+    |> Enum.reduce(get_head_positions(input), fn _, acc ->
       acc
       |> get_tail_positions()
     end)
@@ -18,9 +18,9 @@ aoc 2022, 9 do
     |> MapSet.size()
   end
 
-  def visualize_part2 do
+  def visualize_part2(input) do
     1..9
-    |> Enum.reduce([get_head_positions()], fn _, acc = [head | _] ->
+    |> Enum.reduce([get_head_positions(input)], fn _, acc = [head | _] ->
       [head |> get_tail_positions() | acc]
     end)
     |> Enum.reverse()
@@ -58,10 +58,11 @@ aoc 2022, 9 do
     |> Enum.join("\n")
   end
 
-  def get_head_positions do
+  def get_head_positions(input) do
     start = {0, 0}
 
-    input_stream()
+    input
+    |> String.split("\n")
     |> Stream.map(&String.split/1)
     |> Enum.reduce([start], fn [direction, count], path ->
       {r, c} =
@@ -111,42 +112,42 @@ aoc 2022, 9 do
     |> Enum.drop(1)
   end
 
-  def get_tail_positions() do
-    start = {0, 0}
+  # def get_tail_positions() do
+  #   start = {0, 0}
 
-    input_stream()
-    |> Stream.map(&String.split/1)
-    |> Enum.reduce({start, [start]}, fn [direction, count], {head, path} ->
-      {r, c} =
-        case direction do
-          "R" -> {0, 1}
-          "L" -> {0, -1}
-          "U" -> {1, 0}
-          "D" -> {-1, 0}
-        end
+  #   input_stream()
+  #   |> Stream.map(&String.split/1)
+  #   |> Enum.reduce({start, [start]}, fn [direction, count], {head, path} ->
+  #     {r, c} =
+  #       case direction do
+  #         "R" -> {0, 1}
+  #         "L" -> {0, -1}
+  #         "U" -> {1, 0}
+  #         "D" -> {-1, 0}
+  #       end
 
-      count = String.to_integer(count)
+  #     count = String.to_integer(count)
 
-      1..count
-      |> Enum.reduce({head, path}, fn _, {{head_r, head_c}, path = [{tail_r, tail_c} | _]} ->
-        head_r = head_r + r
-        head_c = head_c + c
+  #     1..count
+  #     |> Enum.reduce({head, path}, fn _, {{head_r, head_c}, path = [{tail_r, tail_c} | _]} ->
+  #       head_r = head_r + r
+  #       head_c = head_c + c
 
-        tail =
-          cond do
-            abs(head_r - tail_r) > 1 ->
-              if tail_r < head_r, do: {tail_r + 1, head_c}, else: {tail_r - 1, head_c}
+  #       tail =
+  #         cond do
+  #           abs(head_r - tail_r) > 1 ->
+  #             if tail_r < head_r, do: {tail_r + 1, head_c}, else: {tail_r - 1, head_c}
 
-            abs(head_c - tail_c) > 1 ->
-              if tail_c < head_c, do: {head_r, tail_c + 1}, else: {head_r, tail_c - 1}
+  #           abs(head_c - tail_c) > 1 ->
+  #             if tail_c < head_c, do: {head_r, tail_c + 1}, else: {head_r, tail_c - 1}
 
-            true ->
-              {tail_r, tail_c}
-          end
+  #           true ->
+  #             {tail_r, tail_c}
+  #         end
 
-        {{head_r, head_c}, [tail | path]}
-      end)
-    end)
-    |> elem(1)
-  end
+  #       {{head_r, head_c}, [tail | path]}
+  #     end)
+  #   end)
+  #   |> elem(1)
+  # end
 end

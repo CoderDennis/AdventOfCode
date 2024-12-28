@@ -1,9 +1,9 @@
 import AOC
 
 aoc 2022, 10 do
-  def p1 do
+  def p1(input) do
     cycles =
-      get_cycles()
+      get_cycles(input)
       |> Enum.with_index()
       |> Enum.reduce(%{}, fn {x, index}, map ->
         Map.put(map, index + 1, x)
@@ -14,8 +14,8 @@ aoc 2022, 10 do
     |> Enum.sum()
   end
 
-  def p2 do
-    get_cycles()
+  def p2(input) do
+    get_cycles(input)
     |> Enum.chunk_every(40)
     |> Enum.map(fn row ->
       row
@@ -28,8 +28,9 @@ aoc 2022, 10 do
     |> Enum.map(&IO.puts/1)
   end
 
-  def get_cycles() do
-    input_stream()
+  def get_cycles(input) do
+    input
+    |> String.split("\n")
     |> Enum.reduce([1], fn line, [x | _] = acc ->
       case line do
         "noop" -> [x | acc]

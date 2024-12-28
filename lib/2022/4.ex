@@ -1,8 +1,9 @@
 import AOC
 
 aoc 2022, 4 do
-  def p1 do
-    input_stream()
+  def p1(input) do
+    input
+    |> String.split("\n")
     |> Enum.filter(&is_fully_contained/1)
     |> Enum.count()
   end
@@ -31,8 +32,9 @@ aoc 2022, 4 do
     |> Enum.map(&String.to_integer/1)
   end
 
-  def p2 do
-    input_stream()
+  def p2(input) do
+    input
+    |> String.split("\n")
     |> Enum.filter(&is_contained/1)
     |> Enum.count()
   end

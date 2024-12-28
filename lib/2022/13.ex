@@ -2,8 +2,9 @@ import AOC
 
 aoc 2022, 13 do
   # 255, 295, 592 are too low
-  def p1 do
-    input_stream()
+  def p1(input) do
+    input
+    |> String.split("\n")
     |> Enum.filter(fn line -> String.length(line) > 0 end)
     |> Enum.map(&Code.eval_string/1)
     |> Enum.map(fn x -> elem(x, 0) end)
@@ -48,8 +49,9 @@ aoc 2022, 13 do
 
   def compare(_, _), do: :gt
 
-  def p2 do
-    input_stream()
+  def p2(input) do
+    input
+    |> String.split("\n")
     |> Enum.filter(fn line -> String.length(line) > 0 end)
     |> Enum.map(&Code.eval_string/1)
     |> Enum.map(fn x -> elem(x, 0) end)
