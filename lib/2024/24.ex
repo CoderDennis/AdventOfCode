@@ -26,30 +26,17 @@ aoc 2024, 24 do
       |> MapSet.new()
       |> IO.inspect()
 
-    # xnz =
-    #   gates
-    #   |> Enum.filter(fn
-    #     {<<out_start::binary-size(1), _>>,
-    #      {<<a_start::binary-size(1), _>>, <<b_start::binary-size(1), _>>, :xor}}
-    #     when out_start != "z" and
-    #            a_start != "x" and
-    #            a_start != "y" and
-    #            b_start != "x" and
-    #            b_start != "y" ->
-    #       true
-
-    #     _ ->
-    #       false
-    #   end)
-    #   |> Enum.map(&elem(&1, 0))
-    #   |> MapSet.new()
-    #   |> IO.inspect()
-
-    # the commented code above didn't work, so I found them by manually searching through the input
-    # to find all the XOR gates that didn't have x and y inputs or z output.
-
     xnz =
-      MapSet.new(["cdj", "gfm", "mrb"])
+      gates
+      |> Enum.filter(fn
+        {<<"z", _::binary-size(2)>>, _} -> false
+        {_, {<<"x", _::binary-size(2)>>, <<"y", _::binary-size(2)>>, _}} -> false
+        {_, {<<"y", _::binary-size(2)>>, <<"x", _::binary-size(2)>>, _}} -> false
+        {_, {_, _, :xor}} -> true
+        _ -> false
+      end)
+      |> Enum.map(&elem(&1, 0))
+      |> MapSet.new()
       |> IO.inspect()
 
     gates =
